@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react"
+import { ChevronDown } from "lucide-react";
 
 export default function FertilizerGuidance() {
   return (
@@ -14,15 +14,19 @@ export default function FertilizerGuidance() {
       {/* Content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen px-6 py-12">
         <div className="w-full max-w-2xl">
-          <h1 className="text-4xl font-bold text-white text-center mb-8">Fertilizer Guidance</h1>
+          <h1 className="text-4xl font-bold text-white text-center mb-8">
+            Fertilizer Guidance
+          </h1>
 
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 border border-white/20">
             <form className="space-y-6">
               {/* Select Your Crop */}
               <div>
-                <label className="block text-white text-sm font-medium mb-2">Select Your Crop*</label>
+                <label className="block text-white text-sm font-medium mb-2">
+                  Select Your Crop*
+                </label>
                 <div className="relative">
-                  <select className="w-full px-4 py-3 bg-white/90 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none">
+                  <select className="w-full px-4 py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
                     <option value="">Select</option>
                     <option value="rice">Rice</option>
                     <option value="wheat">Wheat</option>
@@ -38,9 +42,11 @@ export default function FertilizerGuidance() {
                 {/* Left Column */}
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">Enter pH Level</label>
+                    <label className="block text-white text-sm font-medium mb-2">
+                      Enter pH Level
+                    </label>
                     <div className="relative">
-                      <select className="w-full px-4 py-3 bg-white/90 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none">
+                      <select className="w-full px-4 py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
                         <option value="">Select</option>
                         <option value="acidic">Acidic (0-6.9)</option>
                         <option value="neutral">Neutral (7.0)</option>
@@ -51,9 +57,11 @@ export default function FertilizerGuidance() {
                   </div>
 
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">Enter Nitrogen Level</label>
+                    <label className="block text-white text-sm font-medium mb-2">
+                      Enter Nitrogen Level
+                    </label>
                     <div className="relative">
-                      <select className="w-full px-4 py-3 bg-white/90 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none">
+                      <select className="w-full px-4 py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
                         <option value="">Select</option>
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -64,9 +72,11 @@ export default function FertilizerGuidance() {
                   </div>
 
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">Enter Phosphorus Level</label>
+                    <label className="block text-white text-sm font-medium mb-2">
+                      Enter Phosphorus Level
+                    </label>
                     <div className="relative">
-                      <select className="w-full px-4 py-3 bg-white/90 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none">
+                      <select className="w-full px-4 py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
                         <option value="">Select</option>
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -80,9 +90,11 @@ export default function FertilizerGuidance() {
                 {/* Right Column */}
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">Enter Potassium Level</label>
+                    <label className="block text-white text-sm font-medium mb-2">
+                      Enter Potassium Level
+                    </label>
                     <div className="relative">
-                      <select className="w-full px-4 py-3 bg-white/90 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none">
+                      <select className="w-full px-4 py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
                         <option value="">Select</option>
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -93,9 +105,11 @@ export default function FertilizerGuidance() {
                   </div>
 
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">Enter Soil Moisture Level</label>
+                    <label className="block text-white text-sm font-medium mb-2">
+                      Enter Soil Moisture Level
+                    </label>
                     <div className="relative">
-                      <select className="w-full px-4 py-3 bg-white/90 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none">
+                      <select className="w-full px-4 py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
                         <option value="">Select</option>
                         <option value="dry">Dry</option>
                         <option value="moist">Moist</option>
@@ -106,9 +120,11 @@ export default function FertilizerGuidance() {
                   </div>
 
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">Enter Temperature</label>
+                    <label className="block text-white text-sm font-medium mb-2">
+                      Enter Temperature
+                    </label>
                     <div className="relative">
-                      <select className="w-full px-4 py-3 bg-white/90 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none">
+                      <select className="w-full px-4 py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
                         <option value="">Select</option>
                         <option value="cold">Cold (0-15°C)</option>
                         <option value="moderate">Moderate (16-25°C)</option>
@@ -135,5 +151,5 @@ export default function FertilizerGuidance() {
         </div>
       </div>
     </div>
-  )
+  );
 }

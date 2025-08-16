@@ -1,6 +1,174 @@
-import { ChevronDown } from "lucide-react"
+import { ChevronDown } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+
+// Comprehensive list of farming locations in India and Bangladesh
+const FARMING_LOCATIONS = [
+  // Bangladesh - Divisions and Major Agricultural Areas
+  { place_id: "bd1", description: "Dhaka Division, Bangladesh", region: "Central BD" },
+  { place_id: "bd2", description: "Chittagong Division, Bangladesh", region: "South-East BD" },
+  { place_id: "bd3", description: "Rajshahi Division, Bangladesh", region: "North-West BD" },
+  { place_id: "bd4", description: "Khulna Division, Bangladesh", region: "South-West BD" },
+  { place_id: "bd5", description: "Barisal Division, Bangladesh", region: "South BD" },
+  { place_id: "bd6", description: "Sylhet Division, Bangladesh", region: "North-East BD" },
+  { place_id: "bd7", description: "Rangpur Division, Bangladesh", region: "North BD" },
+  { place_id: "bd8", description: "Mymensingh Division, Bangladesh", region: "North-Central BD" },
+
+  // Bangladesh - Major Agricultural Districts
+  { place_id: "bd9", description: "Comilla, Chittagong Division", region: "South-East BD" },
+  { place_id: "bd10", description: "Bogura, Rajshahi Division", region: "North-West BD" },
+  { place_id: "bd11", description: "Dinajpur, Rangpur Division", region: "North BD" },
+  { place_id: "bd12", description: "Jessore, Khulna Division", region: "South-West BD" },
+  { place_id: "bd13", description: "Faridpur, Dhaka Division", region: "Central BD" },
+  { place_id: "bd14", description: "Pabna, Rajshahi Division", region: "North-West BD" },
+  { place_id: "bd15", description: "Kushtia, Khulna Division", region: "South-West BD" },
+  { place_id: "bd16", description: "Tangail, Dhaka Division", region: "Central BD" },
+  { place_id: "bd17", description: "Mymensingh, Mymensingh Division", region: "North-Central BD" },
+  { place_id: "bd18", description: "Rajbari, Dhaka Division", region: "Central BD" },
+  { place_id: "bd19", description: "Manikganj, Dhaka Division", region: "Central BD" },
+  { place_id: "bd20", description: "Munshiganj, Dhaka Division", region: "Central BD" },
+
+  // Bangladesh - Rice Belt Areas
+  { place_id: "bd21", description: "Barisal, Barisal Division", region: "South BD" },
+  { place_id: "bd22", description: "Patuakhali, Barisal Division", region: "South BD" },
+  { place_id: "bd23", description: "Bhola, Barisal Division", region: "South BD" },
+  { place_id: "bd24", description: "Pirojpur, Barisal Division", region: "South BD" },
+  { place_id: "bd25", description: "Jhalokati, Barisal Division", region: "South BD" },
+  { place_id: "bd26", description: "Barguna, Barisal Division", region: "South BD" },
+
+  // Bangladesh - Northern Agricultural Areas
+  { place_id: "bd27", description: "Rangpur, Rangpur Division", region: "North BD" },
+  { place_id: "bd28", description: "Kurigram, Rangpur Division", region: "North BD" },
+  { place_id: "bd29", description: "Lalmonirhat, Rangpur Division", region: "North BD" },
+  { place_id: "bd30", description: "Nilphamari, Rangpur Division", region: "North BD" },
+  { place_id: "bd31", description: "Gaibandha, Rangpur Division", region: "North BD" },
+  { place_id: "bd32", description: "Thakurgaon, Rangpur Division", region: "North BD" },
+  { place_id: "bd33", description: "Panchagarh, Rangpur Division", region: "North BD" },
+
+  // Bangladesh - Western Agricultural Areas
+  { place_id: "bd34", description: "Rajshahi, Rajshahi Division", region: "North-West BD" },
+  { place_id: "bd35", description: "Natore, Rajshahi Division", region: "North-West BD" },
+  { place_id: "bd36", description: "Naogaon, Rajshahi Division", region: "North-West BD" },
+  { place_id: "bd37", description: "Chapainawabganj, Rajshahi Division", region: "North-West BD" },
+  { place_id: "bd38", description: "Sirajganj, Rajshahi Division", region: "North-West BD" },
+
+  // Bangladesh - Eastern Tea and Agricultural Areas
+  { place_id: "bd39", description: "Sylhet, Sylhet Division", region: "North-East BD" },
+  { place_id: "bd40", description: "Moulvibazar, Sylhet Division", region: "North-East BD" },
+  { place_id: "bd41", description: "Habiganj, Sylhet Division", region: "North-East BD" },
+  { place_id: "bd42", description: "Sunamganj, Sylhet Division", region: "North-East BD" },
+
+  // Bangladesh - Chittagong Hill Tracts and Agricultural Areas
+  { place_id: "bd43", description: "Chittagong, Chittagong Division", region: "South-East BD" },
+  { place_id: "bd44", description: "Cox's Bazar, Chittagong Division", region: "South-East BD" },
+  { place_id: "bd45", description: "Feni, Chittagong Division", region: "South-East BD" },
+  { place_id: "bd46", description: "Lakshmipur, Chittagong Division", region: "South-East BD" },
+  { place_id: "bd47", description: "Noakhali, Chittagong Division", region: "South-East BD" },
+  { place_id: "bd48", description: "Brahmanbaria, Chittagong Division", region: "South-East BD" },
+  { place_id: "bd49", description: "Chandpur, Chittagong Division", region: "South-East BD" },
+
+  // Bangladesh - Central Agricultural Hub
+  { place_id: "bd50", description: "Dhaka, Dhaka Division", region: "Central BD" },
+  { place_id: "bd51", description: "Gazipur, Dhaka Division", region: "Central BD" },
+  { place_id: "bd52", description: "Narayanganj, Dhaka Division", region: "Central BD" },
+  { place_id: "bd53", description: "Narsingdi, Dhaka Division", region: "Central BD" },
+  { place_id: "bd54", description: "Kishoreganj, Dhaka Division", region: "Central BD" },
+  { place_id: "bd55", description: "Gopalganj, Dhaka Division", region: "Central BD" },
+  { place_id: "bd56", description: "Madaripur, Dhaka Division", region: "Central BD" },
+  { place_id: "bd57", description: "Shariatpur, Dhaka Division", region: "Central BD" },
+
+  // Bangladesh - Southwestern Coastal Areas
+  { place_id: "bd58", description: "Khulna, Khulna Division", region: "South-West BD" },
+  { place_id: "bd59", description: "Satkhira, Khulna Division", region: "South-West BD" },
+  { place_id: "bd60", description: "Bagerhat, Khulna Division", region: "South-West BD" },
+  { place_id: "bd61", description: "Jhenaidah, Khulna Division", region: "South-West BD" },
+  { place_id: "bd62", description: "Magura, Khulna Division", region: "South-West BD" },
+  { place_id: "bd63", description: "Narail, Khulna Division", region: "South-West BD" },
+  { place_id: "bd64", description: "Chuadanga, Khulna Division", region: "South-West BD" },
+  { place_id: "bd65", description: "Meherpur, Khulna Division", region: "South-West BD" },
+
+  // India - Major States (keeping the important ones)
+  { place_id: "1", description: "Punjab, India", region: "North India" },
+  { place_id: "2", description: "Haryana, India", region: "North India" },
+  { place_id: "3", description: "Uttar Pradesh, India", region: "North India" },
+  { place_id: "4", description: "Maharashtra, India", region: "West India" },
+  { place_id: "5", description: "West Bengal, India", region: "East India" },
+  { place_id: "6", description: "Gujarat, India", region: "West India" },
+  { place_id: "7", description: "Rajasthan, India", region: "North India" },
+  { place_id: "8", description: "Karnataka, India", region: "South India" },
+  { place_id: "9", description: "Andhra Pradesh, India", region: "South India" },
+  { place_id: "10", description: "Tamil Nadu, India", region: "South India" },
+  { place_id: "11", description: "Madhya Pradesh, India", region: "Central India" },
+  { place_id: "12", description: "Bihar, India", region: "East India" },
+  { place_id: "13", description: "Odisha, India", region: "East India" },
+  { place_id: "14", description: "Telangana, India", region: "South India" },
+  { place_id: "15", description: "Kerala, India", region: "South India" },
+  
+  // India - Major Farming Districts (key ones)
+  { place_id: "16", description: "Ludhiana, Punjab", region: "North India" },
+  { place_id: "17", description: "Amritsar, Punjab", region: "North India" },
+  { place_id: "18", description: "Karnal, Haryana", region: "North India" },
+  { place_id: "19", description: "Nashik, Maharashtra", region: "West India" },
+  { place_id: "20", description: "Pune, Maharashtra", region: "West India" },
+  { place_id: "21", description: "Bharuch, Gujarat", region: "West India" },
+  { place_id: "22", description: "Anand, Gujarat", region: "West India" },
+  { place_id: "23", description: "Mysore, Karnataka", region: "South India" },
+  { place_id: "24", description: "Coimbatore, Tamil Nadu", region: "South India" },
+  { place_id: "25", description: "Guntur, Andhra Pradesh", region: "South India" }
+];
 
 export default function CropRecommendation() {
+  const [locations, setLocations] = useState(FARMING_LOCATIONS);
+  const [filteredLocations, setFilteredLocations] = useState(FARMING_LOCATIONS.slice(0, 10));
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState("");
+  const mapRef = useRef(null);
+
+  useEffect(() => {
+    // Initialize with top farming states
+    setFilteredLocations(FARMING_LOCATIONS.slice(0, 10));
+  }, []);
+
+  const searchLocations = (query) => {
+    if (query.length < 1) {
+      setFilteredLocations(FARMING_LOCATIONS.slice(0, 10));
+      return;
+    }
+
+    const filtered = FARMING_LOCATIONS.filter(location =>
+      location.description.toLowerCase().includes(query.toLowerCase()) ||
+      location.region.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    setFilteredLocations(filtered.slice(0, 15)); // Show max 15 results
+  };
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    setIsDropdownOpen(true);
+    searchLocations(value);
+  };
+
+  const handleLocationSelect = (location) => {
+    setSelectedLocation(location.description);
+    setSearchTerm(location.description);
+    setIsDropdownOpen(false);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (mapRef.current && !mapRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
   return (
     <div
       className="min-h-screen bg-cover bg-center bg-no-repeat relative"
@@ -14,22 +182,49 @@ export default function CropRecommendation() {
       {/* Content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen px-6 py-12">
         <div className="w-full max-w-2xl">
-          <h1 className="text-4xl font-bold text-white text-center mb-8">Crop Recommendation</h1>
+          <h1 className="text-4xl font-bold text-white text-center mb-8">
+            Crop Recommendation
+          </h1>
 
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 border border-white/20">
             <form className="space-y-6">
               {/* Field Location */}
-              <div>
-                <label className="block text-white text-sm font-medium mb-2">Enter your Field Location*</label>
+              <div ref={mapRef}>
+                <label className="block text-white text-sm font-medium mb-2">
+                  Enter your Field Location*
+                </label>
                 <div className="relative">
-                  <select className="w-full px-4 py-3 bg-white/90 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none">
-                    <option value="">Select</option>
-                    <option value="north">North Region</option>
-                    <option value="south">South Region</option>
-                    <option value="east">East Region</option>
-                    <option value="west">West Region</option>
-                  </select>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    onFocus={() => setIsDropdownOpen(true)}
+                    placeholder="Search for your location..."
+                    className="w-full px-4 py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
                   <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
+                  
+                  {/* Dropdown with locations */}
+                  {isDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                      {filteredLocations.length > 0 ? (
+                        filteredLocations.map((location) => (
+                          <div
+                            key={location.place_id}
+                            onClick={() => handleLocationSelect(location)}
+                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800 border-b border-gray-200 last:border-b-0 flex justify-between items-center"
+                          >
+                            <span>{location.description}</span>
+                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                              {location.region}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="px-4 py-2 text-gray-500">No locations found. Try searching for states or cities.</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -38,9 +233,11 @@ export default function CropRecommendation() {
                 {/* Left Column */}
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">Enter pH Level</label>
+                    <label className="block text-white text-sm font-medium mb-2">
+                      Enter pH Level
+                    </label>
                     <div className="relative">
-                      <select className="w-full px-4 py-3 bg-white/90 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none">
+                      <select className="w-full px-4 py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
                         <option value="">Select</option>
                         <option value="acidic">Acidic (0-6.9)</option>
                         <option value="neutral">Neutral (7.0)</option>
@@ -51,9 +248,11 @@ export default function CropRecommendation() {
                   </div>
 
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">Enter Nitrogen Level</label>
+                    <label className="block text-white text-sm font-medium mb-2">
+                      Enter Nitrogen Level
+                    </label>
                     <div className="relative">
-                      <select className="w-full px-4 py-3 bg-white/90 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none">
+                      <select className="w-full px-4 py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
                         <option value="">Select</option>
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -64,9 +263,11 @@ export default function CropRecommendation() {
                   </div>
 
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">Enter Phosphorus Level</label>
+                    <label className="block text-white text-sm font-medium mb-2">
+                      Enter Phosphorus Level
+                    </label>
                     <div className="relative">
-                      <select className="w-full px-4 py-3 bg-white/90 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none">
+                      <select className="w-full px-4 py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
                         <option value="">Select</option>
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -80,9 +281,11 @@ export default function CropRecommendation() {
                 {/* Right Column */}
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">Enter Potassium Level</label>
+                    <label className="block text-white text-sm font-medium mb-2">
+                      Enter Potassium Level
+                    </label>
                     <div className="relative">
-                      <select className="w-full px-4 py-3 bg-white/90 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none">
+                      <select className="w-full px-4 py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
                         <option value="">Select</option>
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -93,9 +296,11 @@ export default function CropRecommendation() {
                   </div>
 
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">Enter Soil Moisture Level</label>
+                    <label className="block text-white text-sm font-medium mb-2">
+                      Enter Soil Moisture Level
+                    </label>
                     <div className="relative">
-                      <select className="w-full px-4 py-3 bg-white/90 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none">
+                      <select className="w-full px-4 py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
                         <option value="">Select</option>
                         <option value="dry">Dry</option>
                         <option value="moist">Moist</option>
@@ -106,9 +311,11 @@ export default function CropRecommendation() {
                   </div>
 
                   <div>
-                    <label className="block text-white text-sm font-medium mb-2">Enter Temperature</label>
+                    <label className="block text-white text-sm font-medium mb-2">
+                      Enter Temperature
+                    </label>
                     <div className="relative">
-                      <select className="w-full px-4 py-3 bg-white/90 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none">
+                      <select className="w-full px-4 py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
                         <option value="">Select</option>
                         <option value="cold">Cold (0-15°C)</option>
                         <option value="moderate">Moderate (16-25°C)</option>
@@ -135,5 +342,5 @@ export default function CropRecommendation() {
         </div>
       </div>
     </div>
-  )
+  );
 }
