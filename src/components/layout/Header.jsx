@@ -21,7 +21,7 @@ const NAVIGATION_ITEMS = [
     href: "/disease-detection",
     icon: MessageSquare,
   },
-  { label: "AgriGPT", href: "/agri-gpt", icon: Bot },
+  // { label: "AgriGPT", href: "/agri-gpt", icon: Bot },
 ];
 
 const SECONDARY_ITEMS = [
@@ -144,7 +144,7 @@ export function Header() {
                 className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-2.5 rounded-xl font-semibold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center space-x-2"
               >
                 <Bot className="w-4 h-4" />
-                <span>Try AgriGPT</span>
+                <span> AgriGPT</span>
               </Link>
             </div>
 

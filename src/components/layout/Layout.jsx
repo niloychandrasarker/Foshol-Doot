@@ -1,5 +1,6 @@
 import { Header } from "./Header";
 import { Footer } from "./Footer";
+import AgriGPTPopup from "../AgriGPTPopup";
 
 export default function Layout({ children }) {
   return (
@@ -7,6 +8,9 @@ export default function Layout({ children }) {
       <Header />
       <main className="relative">{children}</main>
       <Footer />
+
+      {/* Global AgriGPT Popup */}
+      <AgriGPTPopup />
     </div>
   );
 }

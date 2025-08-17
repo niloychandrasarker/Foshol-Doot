@@ -113,24 +113,78 @@ export function ServiceCard({ service }) {
 
   return (
     <Link to={getServiceRoute(service.id)} className="block group">
-      <div className="bg-white rounded-[2rem] shadow-lg hover:shadow-2xl p-8 text-center transition-all duration-300 cursor-pointer min-h-[240px] flex flex-col justify-center hover:scale-105 border border-gray-100">
-        <div className="flex flex-col items-center">
-          <div
-            className="w-20 h-20 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl"
-            style={{
-              backgroundColor: service.iconColor,
-              background: `linear-gradient(135deg, ${service.iconColor}, ${service.iconColor}dd)`,
-            }}
-          >
-            {getServiceIcon(service.id)}
+      <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg hover:shadow-2xl p-6 sm:p-8 text-center transition-all duration-500 cursor-pointer min-h-[280px] sm:min-h-[320px] flex flex-col justify-center hover:scale-105 border border-white/50 overflow-hidden group-hover:bg-white/95">
+        {/* Background Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-emerald-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl"></div>
+
+        {/* Animated Background Elements */}
+        <div className="absolute top-4 right-4 w-12 h-12 bg-gradient-to-br from-green-200 to-emerald-300 rounded-full opacity-20 group-hover:opacity-40 transition-all duration-500 group-hover:scale-125"></div>
+        <div className="absolute bottom-4 left-4 w-8 h-8 bg-gradient-to-br from-yellow-200 to-orange-300 rounded-full opacity-15 group-hover:opacity-30 transition-all duration-700 group-hover:scale-110"></div>
+
+        <div className="relative z-10 flex flex-col items-center">
+          {/* Enhanced Icon Container */}
+          <div className="relative mb-6 sm:mb-8">
+            <div
+              className="w-18 h-18 sm:w-24 sm:h-24 rounded-2xl mx-auto flex items-center justify-center shadow-xl transition-all duration-500 group-hover:scale-110 group-hover:shadow-2xl group-hover:rotate-3 relative overflow-hidden"
+              style={{
+                background: `linear-gradient(135deg, ${service.iconColor}dd, ${service.iconColor}, ${service.iconColor}cc)`,
+              }}
+            >
+              {/* Icon Glow Effect */}
+              <div
+                className="absolute inset-0 rounded-2xl opacity-50 blur-md transition-opacity duration-500 group-hover:opacity-75"
+                style={{
+                  background: `linear-gradient(135deg, ${service.iconColor}88, ${service.iconColor}44)`,
+                }}
+              ></div>
+
+              {/* Icon */}
+              <div className="relative z-10 transform transition-transform duration-500 group-hover:scale-110">
+                {getServiceIcon(service.id)}
+              </div>
+
+              {/* Sparkle Effect */}
+              <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 animate-ping"></div>
+            </div>
+
+            {/* Floating Ring */}
+            <div className="absolute inset-0 w-18 h-18 sm:w-24 sm:h-24 mx-auto border-2 border-green-200 rounded-2xl opacity-0 group-hover:opacity-100 group-hover:scale-125 transition-all duration-700"></div>
           </div>
-          <h3 className="font-bold text-xl text-gray-800 mb-4 leading-tight group-hover:text-gray-900 transition-colors">
+
+          {/* Enhanced Title */}
+          <h3 className="font-bold text-lg sm:text-xl text-gray-800 mb-3 sm:mb-4 leading-tight group-hover:text-gray-900 transition-colors duration-300 relative">
             {service.title}
+
+            {/* Title Underline Effect */}
+            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-green-500 to-emerald-600 group-hover:w-full transition-all duration-500"></div>
           </h3>
-          <p className="text-gray-500 text-sm leading-relaxed px-2 group-hover:text-gray-600 transition-colors">
+
+          {/* Enhanced Description */}
+          <p className="text-gray-500 text-sm sm:text-base leading-relaxed px-2 group-hover:text-gray-600 transition-colors duration-300 line-clamp-3">
             {service.description}
           </p>
+
+          {/* Action Indicator */}
+          <div className="mt-4 sm:mt-6 inline-flex items-center text-green-600 text-sm font-medium opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-500">
+            <span>Explore Service</span>
+            <svg
+              className="w-4 h-4 ml-2 transform transition-transform duration-300 group-hover:translate-x-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </div>
         </div>
+
+        {/* Hover Glow Effect */}
+        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-green-400/10 to-emerald-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
       </div>
     </Link>
   );
