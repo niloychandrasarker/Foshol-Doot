@@ -8,6 +8,7 @@ import AgriGPT from "./pages/AgriGPT";
 
 import RecommendedCrops from "./pages/RecommendedCrops";
 import GuidanceDetails from "./pages/GuidanceDetails";
+import DiseasesCrops from "./pages/DiseasesCrops";
 
 function App() {
   return (
@@ -22,6 +23,8 @@ function App() {
         <Route path="/guidance-details" element={<GuidanceDetails />} />
 
         <Route path="/disease-detection" element={<DiseaseDetection />} />
+        <Route path="/disease" element={<DiseasesCrops />} />
+
         <Route path="/agri-gpt" element={<AgriGPT />} />
       </Routes>
     </Layout>
