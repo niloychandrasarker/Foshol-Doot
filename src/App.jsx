@@ -12,6 +12,11 @@ import DiseasesCrops from "./pages/DiseasesCrops";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 
+import DiseasesCrops from "./pages/DiseasesCrops";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+
+
 function App() {
   return (
     <Layout>
