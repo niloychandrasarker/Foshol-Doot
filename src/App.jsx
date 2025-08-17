@@ -8,9 +8,11 @@ import AgriGPT from "./pages/AgriGPT";
 
 import RecommendedCrops from "./pages/RecommendedCrops";
 import GuidanceDetails from "./pages/GuidanceDetails";
+
 import DiseasesCrops from "./pages/DiseasesCrops";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+
 
 function App() {
   return (
