@@ -1,5 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Upload, RotateCcw, Camera, X, FlipHorizontal } from "lucide-react";
+import {
+  Upload,
+  RotateCcw,
+  Camera,
+  X,
+  FlipHorizontal,
+  Microscope,
+  Smartphone,
+} from "lucide-react";
 
 export default function DiseaseDetection() {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -253,22 +261,28 @@ export default function DiseaseDetection() {
   };
 
   return (
-    <div className="min-h-screen bg-[#e3f6e4] py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-[#e3f6e4] py-6 px-2 sm:px-4">
+      <div className="max-w-2xl mx-auto w-full">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            🔬 Disease Detection
-          </h1>
-          <p className="text-gray-600 mb-4">
+        <div className="text-center mb-6">
+          <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
+            <Microscope className="w-8 h-8" aria-label="Microscope icon" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+              Disease Detection
+            </h1>
+          </div>
+          <p className="text-gray-600 mb-4 text-base sm:text-lg">
             Upload a leaf image or take a photo to detect plant diseases
           </p>
 
           {/* Info Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Camera className="w-5 h-5 text-blue-600" />
+                <Camera
+                  className="w-5 h-5 text-blue-600"
+                  aria-label="Camera icon"
+                />
                 <span className="font-medium text-blue-800">Camera Tips</span>
               </div>
               <p className="text-sm text-blue-700">
@@ -279,7 +293,10 @@ export default function DiseaseDetection() {
 
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Upload className="w-5 h-5 text-green-600" />
+                <Upload
+                  className="w-5 h-5 text-green-600"
+                  aria-label="Upload icon"
+                />
                 <span className="font-medium text-green-800">Upload Tips</span>
               </div>
               <p className="text-sm text-green-700">
@@ -290,36 +307,26 @@ export default function DiseaseDetection() {
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+        <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-8">
           {/* Title */}
-          <h2 className="text-xl font-semibold text-gray-800 text-center mb-8">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 text-center mb-6 sm:mb-8">
             Capture or upload leaf image
           </h2>
 
           {/* Camera Section */}
           {isCameraOpen && (
-            <div className="relative mb-8 bg-black rounded-lg overflow-hidden">
+            <div className="relative mb-8 bg-black rounded-lg overflow-hidden aspect-video max-h-80">
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-64 object-cover"
+                className="w-full h-full object-contain sm:object-cover"
                 style={{
                   transform: facingMode === "user" ? "scaleX(-1)" : "none",
+                  maxHeight: "320px",
                 }}
-                onLoadedMetadata={() => {
-                  console.log("Video metadata loaded");
-                  if (videoRef.current && videoRef.current.videoWidth > 0) {
-                    setIsVideoReady(true);
-                  }
-                }}
-                onCanPlay={() => {
-                  console.log("Video can play");
-                  if (videoRef.current && videoRef.current.videoWidth > 0) {
-                    setIsVideoReady(true);
-                  }
-                }}
+                aria-label="Camera preview"
               />
 
               {/* Loading indicator */}
@@ -346,11 +353,11 @@ export default function DiseaseDetection() {
               )}
 
               {/* Camera Controls */}
-              <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-4">
+              <div className="absolute bottom-4 left-0 right-0 flex flex-wrap justify-center items-center gap-4 px-2">
                 {/* Capture Button */}
                 <button
                   onClick={capturePhoto}
-                  className={`w-20 h-20 rounded-full border-4 transition-all duration-200 flex items-center justify-center shadow-lg ${
+                  className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 transition-all duration-200 flex items-center justify-center shadow-lg focus:outline-none focus:ring-2 focus:ring-green-400 ${
                     isVideoReady
                       ? "bg-white border-gray-300 hover:border-green-500 active:scale-95 cursor-pointer"
                       : "bg-gray-300 border-gray-400 cursor-not-allowed opacity-50"
@@ -361,9 +368,10 @@ export default function DiseaseDetection() {
                       ? "Capture Photo"
                       : "Please wait, camera is loading..."
                   }
+                  aria-label="Capture photo"
                 >
                   <div
-                    className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                    className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center ${
                       isVideoReady ? "bg-green-500" : "bg-gray-400"
                     }`}
                   >
@@ -374,13 +382,14 @@ export default function DiseaseDetection() {
                 {/* Switch Camera */}
                 <button
                   onClick={switchCamera}
-                  className={`p-4 text-white rounded-full transition-colors shadow-lg ${
+                  className={`p-3 sm:p-4 text-white rounded-full transition-colors shadow-lg focus:outline-none focus:ring-2 focus:ring-green-400 ${
                     isVideoReady
                       ? "bg-black/60 hover:bg-black/80 cursor-pointer"
                       : "bg-gray-600/60 cursor-not-allowed opacity-50"
                   }`}
                   title={isVideoReady ? "Switch Camera" : "Camera loading..."}
                   disabled={!isVideoReady}
+                  aria-label="Switch camera"
                 >
                   <FlipHorizontal className="w-6 h-6" />
                 </button>
@@ -388,8 +397,9 @@ export default function DiseaseDetection() {
                 {/* Close Camera */}
                 <button
                   onClick={stopCamera}
-                  className="p-4 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                  className="p-3 sm:p-4 bg-red-500/80 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg focus:outline-none focus:ring-2 focus:ring-red-400"
                   title="Close Camera"
+                  aria-label="Close camera"
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -447,15 +457,19 @@ export default function DiseaseDetection() {
                   </div>
                 ) : (
                   <div className="text-center">
-                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <Upload
+                      className="w-12 h-12 text-gray-400 mx-auto mb-4"
+                      aria-label="Upload icon"
+                    />
                     <p className="text-gray-500 font-medium">
                       Click to upload an image
                     </p>
                     <p className="text-sm text-gray-400 mt-2">
                       PNG, JPG up to 10MB
                     </p>
-                    <div className="mt-4 text-gray-500">
-                      <span className="text-lg">📱</span> or use camera below
+                    <div className="mt-4 text-gray-500 flex items-center justify-center gap-2">
+                      <Smartphone aria-label="Smartphone icon" />
+                      <span className="text-lg">or use camera below</span>
                     </div>
                   </div>
                 )}
@@ -475,21 +489,27 @@ export default function DiseaseDetection() {
           {!isCameraOpen && (
             <div className="space-y-4">
               {/* Camera Status Info */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                <p className="text-sm text-blue-700 mb-2">
-                  📱 <strong>Camera Tips:</strong> Allow camera permission when
-                  prompted
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 text-center shadow-sm">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Smartphone className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-base font-semibold text-blue-800">
+                    Camera Tips
+                  </h3>
+                </div>
+                <p className="text-sm text-blue-700">
+                  Allow camera permission when prompted
                 </p>
-                <p className="text-xs text-blue-600">
+                <p className="text-xs text-blue-600 mt-2">
                   Works best with good lighting and steady hands
                 </p>
               </div>
 
-              <div className="flex justify-center gap-4">
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
                 {/* Upload Button */}
                 <button
                   onClick={handleUploadClick}
-                  className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-md"
+                  className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  aria-label="Upload photo"
                 >
                   <Upload className="w-5 h-5" />
                   Upload Photo
@@ -498,7 +518,8 @@ export default function DiseaseDetection() {
                 {/* Camera Button */}
                 <button
                   onClick={startCamera}
-                  className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-md"
+                  className="flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-green-400"
+                  aria-label="Open camera"
                 >
                   <Camera className="w-5 h-5" />
                   Open Camera
@@ -508,7 +529,8 @@ export default function DiseaseDetection() {
                 {selectedImage && (
                   <button
                     onClick={handleRetake}
-                    className="flex items-center gap-2 px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors shadow-md"
+                    className="flex items-center gap-2 px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400"
+                    aria-label="Retake"
                   >
                     <RotateCcw className="w-5 h-5" />
                     Retake
@@ -526,7 +548,8 @@ export default function DiseaseDetection() {
             <div className="text-center mb-8">
               <button
                 onClick={handleAnalyze}
-                className="px-8 py-3 bg-[#4caf50] text-white font-semibold rounded-lg hover:bg-[#45a049] transition-colors"
+                className="px-8 py-3 bg-[#4caf50] text-white font-semibold rounded-lg hover:bg-[#45a049] transition-colors focus:outline-none focus:ring-2 focus:ring-green-400"
+                aria-label="Analyze image"
               >
                 Analyze Image
               </button>
@@ -536,7 +559,10 @@ export default function DiseaseDetection() {
           {/* Result Button */}
           {result && (
             <div className="text-center mb-8">
-              <button className="px-8 py-3 bg-[#4caf50] text-white font-semibold rounded-lg flex items-center gap-2 mx-auto">
+              <button
+                className="px-8 py-3 bg-[#4caf50] text-white font-semibold rounded-lg flex items-center gap-2 mx-auto focus:outline-none focus:ring-2 focus:ring-green-400"
+                aria-label="Detected disease"
+              >
                 <span className="w-5 h-5 text-white">🔍</span>
                 Detected disease
               </button>
