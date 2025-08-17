@@ -1,8 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-// Comprehensive list of farming locations in India and Bangladesh
 const FARMING_LOCATIONS = [
   // Bangladesh - Divisions and Major Agricultural Areas
   {
@@ -403,31 +402,40 @@ export default function CropRecommendation() {
   const [selectedLocation, setSelectedLocation] = useState("");
   const mapRef = useRef(null);
 
+  //--> API input states
+  const [N, setN] = useState(60);
+  const [P, setP] = useState(30);
+  const [K, setK] = useState(50);
+  const [temperature, setTemperature] = useState(30);
+  const [humidity, setHumidity] = useState(70);
+  const [ph, setPh] = useState(7);
+  const [loading, setLoading] = useState(false);
+  const [recommendation, setRecommendation] = useState(null);
+  const [error, setError] = useState(null);
+
   useEffect(() => {
-    // Initialize with top farming states
     setFilteredLocations(FARMING_LOCATIONS.slice(0, 10));
   }, []);
 
+  const navigate = useNavigate();
+
+  //--> Utility: simple search over FARMING_LOCATIONS
   const searchLocations = (query) => {
-    if (query.length < 1) {
-      setFilteredLocations(FARMING_LOCATIONS.slice(0, 10));
-      return;
-    }
-
-    const filtered = FARMING_LOCATIONS.filter(
-      (location) =>
-        location.description.toLowerCase().includes(query.toLowerCase()) ||
-        location.region.toLowerCase().includes(query.toLowerCase())
-    );
-
-    setFilteredLocations(filtered.slice(0, 15)); // Show max 15 results
+    const q = (query || "").toString().trim().toLowerCase();
+    if (!q) return FARMING_LOCATIONS.slice(0, 10);
+    return FARMING_LOCATIONS.filter((loc) => {
+      return (
+        (loc.description || "").toLowerCase().includes(q) ||
+        (loc.region || "").toLowerCase().includes(q)
+      );
+    }).slice(0, 50);
   };
 
   const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
+    const val = e.target.value;
+    setSearchTerm(val);
+    setFilteredLocations(searchLocations(val));
     setIsDropdownOpen(true);
-    searchLocations(value);
   };
 
   const handleLocationSelect = (location) => {
@@ -436,19 +444,37 @@ export default function CropRecommendation() {
     setIsDropdownOpen(false);
   };
 
-  // Close dropdown when clicking outside
+  //--> click-outside to close dropdown
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (mapRef.current && !mapRef.current.contains(event.target)) {
+    function handleClickOutside(ev) {
+      if (mapRef.current && !mapRef.current.contains(ev.target)) {
         setIsDropdownOpen(false);
       }
-    };
-
+    }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setRecommendation(null);
+
+    //--> Navigate to the recommended list page and let that page perform the API call.
+    navigate("/recommended-list", {
+      state: {
+        N,
+        P,
+        K,
+        temperature,
+        humidity,
+        ph,
+        location: selectedLocation,
+      },
+    });
+    setLoading(false);
+  };
 
   return (
     <div
@@ -478,7 +504,7 @@ export default function CropRecommendation() {
               backdropFilter: "blur(24px) saturate(180%)",
             }}
           >
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleSubmit}>
               {/* Field Location */}
               <div ref={mapRef}>
                 <label className="block text-white text-sm font-medium mb-2">
@@ -492,6 +518,7 @@ export default function CropRecommendation() {
                     onFocus={() => setIsDropdownOpen(true)}
                     placeholder="Search for your location..."
                     className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    required
                   />
                   <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
 
@@ -522,120 +549,111 @@ export default function CropRecommendation() {
                 </div>
               </div>
 
-              {/* Two column grid */}
+              {/* Two column grid with number inputs */}
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Left Column */}
                 <div className="space-y-6">
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
-                      Enter pH Level
+                      pH Level
                     </label>
-                    <div className="relative">
-                      <select className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
-                        <option value="">Select</option>
-                        <option value="acidic">Acidic (0-6.9)</option>
-                        <option value="neutral">Neutral (7.0)</option>
-                        <option value="alkaline">Alkaline (7.1-14)</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
-                    </div>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="14"
+                      value={ph}
+                      onChange={(e) => setPh(Number(e.target.value))}
+                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      required
+                    />
                   </div>
-
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
-                      Enter Nitrogen Level
+                      Nitrogen (N)
                     </label>
-                    <div className="relative">
-                      <select className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
-                        <option value="">Select</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
-                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      value={N}
+                      onChange={(e) => setN(Number(e.target.value))}
+                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      required
+                    />
                   </div>
-
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
-                      Enter Phosphorus Level
+                      Phosphorus (P)
                     </label>
-                    <div className="relative">
-                      <select className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
-                        <option value="">Select</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
-                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      value={P}
+                      onChange={(e) => setP(Number(e.target.value))}
+                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      required
+                    />
                   </div>
                 </div>
-
                 {/* Right Column */}
                 <div className="space-y-6">
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
-                      Enter Potassium Level
+                      Potassium (K)
                     </label>
-                    <div className="relative">
-                      <select className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
-                        <option value="">Select</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
-                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      value={K}
+                      onChange={(e) => setK(Number(e.target.value))}
+                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      required
+                    />
                   </div>
-
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
-                      Enter Soil Moisture Level
+                      Humidity (%)
                     </label>
-                    <div className="relative">
-                      <select className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
-                        <option value="">Select</option>
-                        <option value="dry">Dry</option>
-                        <option value="moist">Moist</option>
-                        <option value="wet">Wet</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
-                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={humidity}
+                      onChange={(e) => setHumidity(Number(e.target.value))}
+                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      required
+                    />
                   </div>
-
                   <div>
                     <label className="block text-white text-sm font-medium mb-2">
-                      Enter Temperature
+                      Temperature (°C)
                     </label>
-                    <div className="relative">
-                      <select className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none">
-                        <option value="">Select</option>
-                        <option value="cold">Cold (0-15°C)</option>
-                        <option value="moderate">Moderate (16-25°C)</option>
-                        <option value="warm">Warm (26-35°C)</option>
-                        <option value="hot">Hot (36°C+)</option>
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
-                    </div>
+                    <input
+                      type="number"
+                      min="-20"
+                      max="60"
+                      value={temperature}
+                      onChange={(e) => setTemperature(Number(e.target.value))}
+                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      required
+                    />
                   </div>
                 </div>
               </div>
 
               {/* Submit Button */}
-              <div className="flex justify-center pt-4">
-                {/* <button
+              <div className="flex flex-col items-center pt-4 gap-2">
+                <button
                   type="submit"
-                  className="px-4 md:px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-medium rounded-full shadow-sm shadow-green-200/40 border border-white/30 transition-all duration-200 focus:outline-none focus:ring-3 focus:ring-green-300/40"
+                  className="px-4 md:px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-medium rounded-full shadow-sm shadow-green-200/40 border border-white/30 transition-all duration-200 focus:outline-none focus:ring-3 focus:ring-green-300/40 disabled:opacity-60"
+                  disabled={loading}
                 >
-                  Get Recommendations
-                </button> */}
-                <Link
-                  to="/recommended-crops"
-                  className="px-4 md:px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-medium rounded-full shadow-sm shadow-green-200/40 border border-white/30 transition-all duration-200 focus:outline-none focus:ring-3 focus:ring-green-300/40"
-                >
-                  Get Recommendations
-                </Link>
+                  {loading ? "Loading..." : "Get Recommendations"}
+                </button>
+                {error && (
+                  <div className="text-red-600 text-sm mt-2">{error}</div>
+                )}
+                {/* Recommendation is now shown on the next page */}
               </div>
             </form>
           </div>
