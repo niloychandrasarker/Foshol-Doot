@@ -21,7 +21,7 @@ import cotton from "../../public/CropsImage/cotton.jpg";
 import jute from "../../public/CropsImage/jute.jpg";
 import coffee from "../../public/CropsImage/coffee.jpg";
 
-import { LuBadgeCheck } from "react-icons/lu";
+import { LuBadgeAlert, LuBadgeCheck, LuBadgeX, LuMapPin } from "react-icons/lu";
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 
@@ -70,7 +70,13 @@ const CropCard = ({ name, score, imageAlt, imageUrl }) => {
           {score}% probability
         </span>
         <div className="rounded-full flex items-center justify-center">
-          <LuBadgeCheck className="w-6 h-6" />
+          {score < 40 ? (
+            <LuBadgeX className="w-6 h-6 text-red-600" />
+          ) : score >= 40 && score < 70 ? (
+            <LuBadgeAlert className="w-6 h-6 text-yellow-600" />
+          ) : (
+            <LuBadgeCheck className="w-6 h-6 text-green-600" />
+          )}
         </div>
       </div>
     </div>
@@ -170,75 +176,125 @@ const RecommendedCrops = () => {
             : "Crop Recommendations"}
         </h1>
 
-        {/* Show input summary when we have API results */}
-        {formData && recommendations && recommendations.length > 0 && (
-          <div className="bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm rounded-2xl mb-12 p-6 shadow-xl">
-            <h3 className="text-2xl md:text-3xl font-extrabold text-gray-800 text-center mb-4 leading-tight">
-              Soil Conditions Overview
-            </h3>
+        {/* Main Content - Two Column Layout for Large Devices */}
+        <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+          {/* Left Column - Soil Conditions Summary (1/3 width) */}
+          {formData && recommendations && recommendations.length > 0 && (
+            <div className="lg:col-span-1 mb-12 lg:mb-0">
+              <div className="bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm rounded-2xl p-4 shadow-xl lg:sticky lg:top-6">
+                <h3 className="text-xl md:text-2xl font-extrabold text-gray-800 text-center mb-4 leading-tight">
+                  Soil Conditions Overview
+                </h3>
 
-            {/* Displaying the soil data */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-center text-sm sm:text-base text-gray-700 font-medium">
-              <div className="bg-green-100 rounded-xl p-3 shadow-inner border border-gray-200 transition-transform hover:scale-105 hover:shadow-lg">
-                <span className="text-gray-500">Nitrogen (N)</span>
-                <p className="font-bold text-lg md:text-xl text-emerald-600">
-                  {formData.N}
-                </p>
+                {/* Displaying the soil data */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-3 text-center lg:text-left text-sm sm:text-base text-gray-700 font-medium">
+                  <div className="bg-green-100 rounded-xl p-2 shadow-inner border border-gray-200 transition-transform hover:scale-105 hover:shadow-lg flex flex-col md:flex-row md:items-center md:justify-between">
+                    <span className="text-gray-500">Nitrogen (N):</span>
+                    <p className="font-bold text-lg md:text-xl text-emerald-600">
+                      {formData.N}
+                    </p>
+                  </div>
+                  <div className="bg-green-100 rounded-xl px-1 py-2 md:p-2 shadow-inner border border-gray-200 transition-transform hover:scale-105 hover:shadow-lg flex flex-col md:flex-row md:items-center md:justify-between">
+                    <span className="text-gray-500">Phosphorus (P):</span>
+                    <p className="font-bold text-lg md:text-xl text-emerald-600">
+                      {formData.P}
+                    </p>
+                  </div>
+                  <div className="bg-green-100 rounded-xl p-2 shadow-inner border border-gray-200 transition-transform hover:scale-105 hover:shadow-lg flex flex-col md:flex-row md:items-center md:justify-between">
+                    <span className="text-gray-500">Potassium (K):</span>
+                    <p className="font-bold text-lg md:text-xl text-emerald-600">
+                      {formData.K}
+                    </p>
+                  </div>
+                  <div className="bg-green-100 rounded-xl p-2 shadow-inner border border-gray-200 transition-transform hover:scale-105 hover:shadow-lg flex flex-col md:flex-row md:items-center md:justify-between">
+                    <span className="text-gray-500">Temperature:</span>
+                    <p className="font-bold text-lg md:text-xl text-emerald-600">
+                      {formData.temperature}°C
+                    </p>
+                  </div>
+                  <div className="bg-green-100 rounded-xl p-2 shadow-inner border border-gray-200 transition-transform hover:scale-105 hover:shadow-lg flex flex-col md:flex-row md:items-center md:justify-between">
+                    <span className="text-gray-500">Humidity:</span>
+                    <p className="font-bold text-lg md:text-xl text-emerald-600">
+                      {formData.humidity}%
+                    </p>
+                  </div>
+                  <div className="bg-green-100 rounded-xl p-2 shadow-inner border border-gray-200 transition-transform hover:scale-105 hover:shadow-lg flex flex-col md:flex-row md:items-center md:justify-between">
+                    <span className="text-gray-500">pH:</span>
+                    <p className="font-bold text-lg md:text-xl text-emerald-600">
+                      {formData.ph}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Displaying the location if it exists */}
+                {formData.location && (
+                  <div className="mt-4 text-center lg:text-left text-gray-600 font-semibold text-md border-t pt-4 border-gray-200">
+                    <p className="flex items-center justify-center lg:justify-start gap-2">
+                      <LuMapPin className="h-5 w-5 text-red-500" />
+                      <span className="text-emerald-700 font-semibold">
+                        {formData.location}
+                      </span>
+                    </p>
+                  </div>
+                )}
               </div>
-              <div className="bg-green-100 rounded-xl p-3 shadow-inner border border-gray-200 transition-transform hover:scale-105 hover:shadow-lg">
-                <span className="text-gray-500">Phosphorus (P)</span>
-                <p className="font-bold text-lg md:text-xl text-emerald-600">
-                  {formData.P}
-                </p>
-              </div>
-              <div className="bg-green-100 rounded-xl p-3 shadow-inner border border-gray-200 transition-transform hover:scale-105 hover:shadow-lg">
-                <span className="text-gray-500">Potassium (K)</span>
-                <p className="font-bold text-lg md:text-xl text-emerald-600">
-                  {formData.K}
-                </p>
-              </div>
-              <div className="bg-green-100 rounded-xl p-3 shadow-inner border border-gray-200 transition-transform hover:scale-105 hover:shadow-lg">
-                <span className="text-gray-500">Temperature</span>
-                <p className="font-bold text-lg md:text-xl text-emerald-600">
-                  {formData.temperature}°C
-                </p>
-              </div>
-              <div className="bg-green-100 rounded-xl p-3 shadow-inner border border-gray-200 transition-transform hover:scale-105 hover:shadow-lg">
-                <span className="text-gray-500">Humidity</span>
-                <p className="font-bold text-lg md:text-xl text-emerald-600">
-                  {formData.humidity}%
-                </p>
-              </div>
-              <div className="bg-green-100 rounded-xl p-3 shadow-inner border border-gray-200 transition-transform hover:scale-105 hover:shadow-lg">
-                <span className="text-gray-500">pH</span>
-                <p className="font-bold text-lg md:text-xl text-emerald-600">
-                  {formData.ph}
-                </p>
-              </div>
+
             </div>
+          )}
 
-            {/* Displaying the location if it exists */}
-            {formData.location && (
-              <div className="mt-6 text-center text-gray-600 font-semibold text-lg border-t pt-4 border-gray-200">
-                <p>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 inline mr-1 text-red-500"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
+          {/* Right Column - Crop Grid (2/3 width) */}
+          <div
+            className={`${
+              formData && recommendations && recommendations.length > 0
+                ? "lg:col-span-2"
+                : "lg:col-span-3"
+            }`}
+          >
+            {/* Crop Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-7 pb-6">
+              {loading ? (
+                <div className="col-span-full text-center text-lg text-green-700 py-12">
+                  <div className="mb-4">
+                    <span className="loading loading-dots loading-xl"></span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Loading recommendations...
+                  </p>
+                </div>
+              ) : error ? (
+                <div className="col-span-full text-center text-red-600 py-12">
+                  <p className="text-lg font-medium">{error}</p>
+                </div>
+              ) : recommendations && recommendations.length > 0 ? (
+                recommendations.map((rec, index) => (
+                  <CropCard
+                    key={rec.crop + index}
+                    name={rec.crop.charAt(0).toUpperCase() + rec.crop.slice(1)}
+                    score={Math.round(rec.probability)}
+                    imageAlt={rec.crop + " crop"}
+                    imageUrl={
+                      cropImages[rec.crop.toLowerCase()] || cropImg.rice
+                    }
+                  />
+                ))
+              ) : (
+                <div className="col-span-full text-center text-lg text-gray-600 py-12">
+                  <p className="text-xl font-medium mb-4">
+                    No Recommendations Available
+                  </p>
+                  <p className="mb-6 text-gray-500">
+                    Please fill out the crop recommendation form to get
+                    personalized suggestions.
+                  </p>
+                  <a
+                    href="/crop-recommendation"
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium transition-colors"
                   >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Location:{" "}
-                  <span className="text-emerald-700 font-bold">
-                    {formData.location}
-                  </span>
-                </p>
-              </div>
+                    Go to Crop Recommendation
+                  </a>
+                </div>
+              )}
+
             )}
           </div>
         )}
@@ -283,8 +339,9 @@ const RecommendedCrops = () => {
               >
                 Go to Crop Recommendation
               </a>
+
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
@@ -292,3 +349,5 @@ const RecommendedCrops = () => {
 };
 
 export default RecommendedCrops;
+
+//--> Error ki solve hoice...
