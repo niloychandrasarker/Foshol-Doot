@@ -403,12 +403,12 @@ export default function CropRecommendation() {
   const mapRef = useRef(null);
 
   //--> API input states
-  const [N, setN] = useState(60);
-  const [P, setP] = useState(30);
-  const [K, setK] = useState(50);
-  const [temperature, setTemperature] = useState(30);
-  const [humidity, setHumidity] = useState(70);
-  const [ph, setPh] = useState(7);
+  const [N, setN] = useState("");
+  const [P, setP] = useState("");
+  const [K, setK] = useState("");
+  const [temperature, setTemperature] = useState("");
+  const [humidity, setHumidity] = useState("");
+  const [ph, setPh] = useState("");
   const [loading, setLoading] = useState(false);
   const [recommendation, setRecommendation] = useState(null);
   const [error, setError] = useState(null);
@@ -517,7 +517,7 @@ export default function CropRecommendation() {
                     onChange={handleSearchChange}
                     onFocus={() => setIsDropdownOpen(true)}
                     placeholder="Search for your location..."
-                    className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black"
                     required
                   />
                   <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
@@ -564,7 +564,8 @@ export default function CropRecommendation() {
                       max="14"
                       value={ph}
                       onChange={(e) => setPh(Number(e.target.value))}
-                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="Enter pH Level"
+                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black"
                       required
                     />
                   </div>
@@ -577,7 +578,8 @@ export default function CropRecommendation() {
                       min="0"
                       value={N}
                       onChange={(e) => setN(Number(e.target.value))}
-                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="Enter Nitrogen (N)"
+                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black"
                       required
                     />
                   </div>
@@ -590,7 +592,8 @@ export default function CropRecommendation() {
                       min="0"
                       value={P}
                       onChange={(e) => setP(Number(e.target.value))}
-                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="Enter Phosphorus (P)"
+                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black"
                       required
                     />
                   </div>
@@ -606,7 +609,8 @@ export default function CropRecommendation() {
                       min="0"
                       value={K}
                       onChange={(e) => setK(Number(e.target.value))}
-                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="Enter Potassium (K)"
+                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black"
                       required
                     />
                   </div>
@@ -620,7 +624,8 @@ export default function CropRecommendation() {
                       max="100"
                       value={humidity}
                       onChange={(e) => setHumidity(Number(e.target.value))}
-                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="Enter Humidity (%)"
+                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black"
                       required
                     />
                   </div>
@@ -634,7 +639,8 @@ export default function CropRecommendation() {
                       max="60"
                       value={temperature}
                       onChange={(e) => setTemperature(Number(e.target.value))}
-                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="Enter Temperature (°C)"
+                      className="w-full px-3 md:px-4 py-2 md:py-3 bg-white/90 border-2 border-gray-500 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black"
                       required
                     />
                   </div>
