@@ -1,5 +1,5 @@
 import { ChevronDown } from "lucide-react";
-import bg_img from "../../public/background-img.jpg";
+import bg_img from "/public/background-img.jpg";
 import { Link } from "react-router-dom";
 
 export default function FertilizerGuidance() {

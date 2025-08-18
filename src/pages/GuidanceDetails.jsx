@@ -1,4 +1,4 @@
-import img4 from "../../public/img4.jpg";
+import img4 from "/public/img4.jpg";
 import { HiOutlineDownload } from "react-icons/hi";
 
 //--> Data for the Fertilizer and Timeline sections

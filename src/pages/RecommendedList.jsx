@@ -164,10 +164,15 @@ const RecommendedCrops = () => {
         {/* Header */}
         <h1 className="text-2xl md:text-4xl font-bold text-center text-gray-900 p-3 md:p-6">
           {recommendations && recommendations.length > 0
+
             ? "AI Recommended Crops List"
             : loading
             ? " "
             : "Crop Recommendations"}
+
+            ? "List of Recommended Crops"
+            : "No Recommendations Available"}
+
         </h1>
 
         {/* Show input summary when we have API results */}
@@ -246,6 +251,7 @@ const RecommendedCrops = () => {
         {/* Crop Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 pb-6">
           {loading ? (
+
             <div className="col-span-full text-center text-lg text-green-700 py-12">
               <div className="mb-4">
                 <span className="loading loading-dots loading-xl"></span>
@@ -257,6 +263,15 @@ const RecommendedCrops = () => {
           ) : error ? (
             <div className="col-span-full text-center text-red-600 py-12">
               <p className="text-lg font-medium">{error}</p>
+
+            <div className="col-span-full text-center text-lg text-green-700">
+              {/* Loading recommendation... */}
+              <span className="loading loading-dots loading-xl"></span>
+            </div>
+          ) : error ? (
+            <div className="col-span-full text-center text-red-600">
+              {error}
+
             </div>
           ) : recommendations && recommendations.length > 0 ? (
             recommendations.map((rec, index) => (
@@ -269,11 +284,16 @@ const RecommendedCrops = () => {
               />
             ))
           ) : (
+
             <div className="col-span-full text-center text-lg text-gray-600 py-12">
               <p className="text-xl font-medium mb-4">
                 No Recommendations Available
               </p>
               <p className="mb-6 text-gray-500">
+
+            <div className="col-span-full text-center text-lg text-gray-600">
+              <p className="mb-4">
+
                 Please fill out the crop recommendation form to get personalized
                 suggestions.
               </p>
