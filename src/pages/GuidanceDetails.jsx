@@ -28,9 +28,8 @@ import {
   HiLightBulb,
 } from "react-icons/hi";
 import { useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import { useEffect, useState, useRef } from "react";
+import PDFDownload from "../components/PDFDownload";
 
 const cropImg = {
   rice: rice,
@@ -186,10 +185,16 @@ const GuidanceDetails = () => {
                   recommendations for optimal crop growth
                 </p>
                 <div className="flex items-center justify-center lg:justify-start space-x-4">
-                  <button className="flex items-center space-x-2 bg-green-200 text-green-700 px-6 py-3 rounded-xl font-semibold hover:bg-green-300 transition-colors">
-                    <HiOutlineDownload className="w-5 h-5" />
-                    <span>Save Report</span>
-                  </button>
+                  <PDFDownload
+                    data={recommendations}
+                    fileName={`${
+                      recommendations?.crop || "fertilizer"
+                    }_fertilizer_report`}
+                    title="Fertilizer Report"
+                    buttonText="Save Report"
+                    type="fertilizer"
+                    captureFullPage={false}
+                  />
                 </div>
               </div>
             </div>
