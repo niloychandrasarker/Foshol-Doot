@@ -145,16 +145,16 @@ export default function AgriGPT() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex flex-col">
       {/* Header */}
-      <div className="max-w-4xl mx-auto w-full bg-green-100 shadow-md border-b border-green-200 py-6 px-4 sm:px-8 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 justify-between rounded-b-2xl mt-0 mb-2">
-        <div className="flex items-center gap-3">
-          <div className="bg-green-100 p-3 rounded-full flex items-center justify-center">
-            <Bot className="w-7 h-7 text-green-600" />
+      <div className="max-w-4xl mx-auto w-full bg-white/90 backdrop-blur-sm shadow-lg border-b border-green-200/50 py-6 px-4 sm:px-8 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 justify-between rounded-b-3xl mt-0 mb-4">
+        <div className="flex items-center gap-4">
+          <div className="bg-gradient-to-br from-green-100 to-green-200 p-4 rounded-2xl flex items-center justify-center shadow-md">
+            <Bot className="w-8 h-8 text-green-700" />
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 flex items-center gap-2">
-              AgriGPT <Sparkles className="w-5 h-5 text-yellow-500" />
+              AgriGPT <Sparkles className="w-6 h-6 text-yellow-500" />
             </h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-1">
+            <p className="text-sm sm:text-base text-gray-600 mt-1 font-medium">
               Your AI-Powered Farming Assistant
             </p>
           </div>
@@ -165,19 +165,19 @@ export default function AgriGPT() {
       <div className="flex-1 w-full max-w-4xl mx-auto px-1 sm:px-4 py-2 sm:py-4 flex flex-col gap-2">
         {/* Quick Questions */}
         {messages.length === 1 && (
-          <div className="mb-4 bg-white rounded-2xl p-4 shadow-md border border-green-200">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-              <MessageCircle className="w-5 h-5 text-green-600 mr-2" />
+          <div className="mb-6 bg-white/80 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-green-200/50">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
+              <MessageCircle className="w-6 h-6 text-green-600 mr-3" />
               Quick Questions to Get Started:
             </h3>
-            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3">
               {quickQuestions.map((question, index) => (
                 <button
                   key={index}
                   onClick={() => handleQuickQuestion(question)}
-                  className="text-left p-3 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 transition-colors text-sm w-full"
+                  className="text-left p-4 bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 rounded-2xl border border-green-200/50 transition-all duration-200 text-sm w-full shadow-sm hover:shadow-md transform hover:scale-105"
                 >
-                  {question}
+                  <span className="font-medium text-gray-800">{question}</span>
                 </button>
               ))}
             </div>
@@ -185,7 +185,7 @@ export default function AgriGPT() {
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-3 mb-2 pr-1 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -194,25 +194,29 @@ export default function AgriGPT() {
               }`}
             >
               <div
-                className={`max-w-3xl px-4 py-3 rounded-2xl shadow-md break-words ${
+                className={`max-w-3xl px-5 py-4 rounded-3xl shadow-md break-words transition-all duration-200 ${
                   message.type === "user"
-                    ? "bg-green-600 text-white rounded-br-md"
-                    : "bg-white text-gray-800 border border-green-200 rounded-bl-md"
+                    ? "bg-gradient-to-r from-green-600 to-green-700 text-white rounded-br-lg"
+                    : "bg-white/90 backdrop-blur-sm text-gray-800 border border-green-200/50 rounded-bl-lg"
                 }`}
               >
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-3">
                   {message.type === "bot" && (
-                    <Bot className="w-5 h-5 text-green-600 mt-1 flex-shrink-0" />
+                    <div className="bg-green-100 p-2 rounded-full mt-1">
+                      <Bot className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    </div>
                   )}
                   {message.type === "user" && (
-                    <User className="w-5 h-5 text-white mt-1 flex-shrink-0" />
+                    <div className="bg-white/20 p-2 rounded-full mt-1">
+                      <User className="w-5 h-5 text-white flex-shrink-0" />
+                    </div>
                   )}
                   <div className="flex-1">
-                    <div className="whitespace-pre-line text-base">
+                    <div className="whitespace-pre-line text-base leading-relaxed">
                       {message.content}
                     </div>
                     <div
-                      className={`text-xs mt-2 ${
+                      className={`text-xs mt-3 font-medium ${
                         message.type === "user"
                           ? "text-green-100"
                           : "text-gray-500"
@@ -229,9 +233,11 @@ export default function AgriGPT() {
           {/* Typing Indicator */}
           {isTyping && (
             <div className="flex justify-start">
-              <div className="bg-white text-gray-800 border border-green-200 px-4 py-3 rounded-2xl shadow-md">
-                <div className="flex items-center gap-2">
-                  <Bot className="w-5 h-5 text-green-600" />
+              <div className="bg-white/90 backdrop-blur-sm text-gray-800 border border-green-200/50 px-5 py-4 rounded-3xl shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-100 p-2 rounded-full">
+                    <Bot className="w-5 h-5 text-green-600" />
+                  </div>
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce"></div>
                     <div
@@ -243,7 +249,7 @@ export default function AgriGPT() {
                       style={{ animationDelay: "0.2s" }}
                     ></div>
                   </div>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-gray-600 font-medium">
                     AgriGPT is thinking...
                   </span>
                 </div>
@@ -255,20 +261,20 @@ export default function AgriGPT() {
         </div>
 
         {/* Input Area - GPT Style */}
-        <div className="sticky bottom-0 left-0 w-full bg-gradient-to-t from-green-50/80 to-transparent pt-4 z-10">
+        <div className="sticky bottom-0 left-0 w-full bg-gradient-to-t from-green-50/90 via-green-50/50 to-transparent pt-6 z-10">
           <div className="max-w-4xl mx-auto px-2 sm:px-6">
-            <div className="bg-white rounded-full shadow-lg border border-green-200 flex items-center px-2 py-1 sm:py-2 gap-2 sm:gap-3">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-green-200/50 flex items-center px-3 py-2 sm:py-3 gap-2 sm:gap-4">
               <textarea
                 ref={inputRef}
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask me anything about farming... (e.g., How to grow rice? Best fertilizer for wheat?)"
-                className="flex-1 bg-transparent border-none outline-none px-4 py-2 resize-none text-base focus:ring-0 rounded-full min-h-[40px] max-h-32"
+                className="flex-1 bg-transparent border-none outline-none px-4 py-3 resize-none text-base focus:ring-0 rounded-xl min-h-[48px] max-h-32 text-gray-800 placeholder-gray-500"
                 rows={1}
                 disabled={isTyping}
                 style={{
-                  minHeight: "40px",
+                  minHeight: "48px",
                   maxHeight: "120px",
                   overflow: "auto",
                 }}
@@ -276,15 +282,15 @@ export default function AgriGPT() {
               <button
                 onClick={handleSendMessage}
                 disabled={!inputMessage.trim() || isTyping}
-                className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white p-2 sm:p-3 rounded-full transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:bg-gray-300 disabled:from-gray-300 disabled:to-gray-300 text-white p-3 sm:p-3.5 rounded-xl transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-green-400 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
                 aria-label="Send message"
               >
                 <Send className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex items-center space-x-2 my-2 text-xs text-gray-500 px-2">
+            <div className="flex items-center space-x-2 my-3 text-xs text-gray-600 px-3">
               <Leaf className="w-4 h-4 text-green-500" />
-              <span>
+              <span className="font-medium">
                 AgriGPT can help with crops, diseases, fertilizers, weather, and
                 more!
               </span>
@@ -294,4 +300,37 @@ export default function AgriGPT() {
       </div>
     </div>
   );
+}
+
+// Add custom scrollbar styles
+const styles = `
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #10b981 #f0fdf4;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #f0fdf4;
+    border-radius: 10px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #10b981;
+    border-radius: 10px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #059669;
+  }
+`;
+
+// Inject styles
+if (typeof document !== "undefined") {
+  const styleElement = document.createElement("style");
+  styleElement.textContent = styles;
+  document.head.appendChild(styleElement);
 }
