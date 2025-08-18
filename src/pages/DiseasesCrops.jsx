@@ -1,4 +1,4 @@
-import img5 from "../../public/img5.jpg";
+import img5 from "/public/img5.jpg";
 import { FaAngleRight } from "react-icons/fa6";
 import { FaMagic } from "react-icons/fa";
 import { AiFillOpenAI } from "react-icons/ai";
