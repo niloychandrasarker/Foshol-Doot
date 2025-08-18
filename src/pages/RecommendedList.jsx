@@ -238,7 +238,6 @@ const RecommendedCrops = () => {
                   </div>
                 )}
               </div>
-
             </div>
           )}
 
@@ -294,52 +293,6 @@ const RecommendedCrops = () => {
                   </a>
                 </div>
               )}
-
-            )}
-          </div>
-        )}
-
-        {/* Crop Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 pb-6">
-          {loading ? (
-            <div className="col-span-full text-center text-lg text-green-700 py-12">
-              <div className="mb-4">
-                <span className="loading loading-dots loading-xl"></span>
-              </div>
-              <p className="text-sm text-gray-600">
-                Loading recommendations...
-              </p>
-            </div>
-          ) : error ? (
-            <div className="col-span-full text-center text-red-600 py-12">
-              <p className="text-lg font-medium">{error}</p>
-            </div>
-          ) : recommendations && recommendations.length > 0 ? (
-            recommendations.map((rec, index) => (
-              <CropCard
-                key={rec.crop + index}
-                name={rec.crop.charAt(0).toUpperCase() + rec.crop.slice(1)}
-                score={Math.round(rec.probability)}
-                imageAlt={rec.crop + " crop"}
-                imageUrl={cropImages[rec.crop.toLowerCase()] || cropImg.rice}
-              />
-            ))
-          ) : (
-            <div className="col-span-full text-center text-lg text-gray-600 py-12">
-              <p className="text-xl font-medium mb-4">
-                No Recommendations Available
-              </p>
-              <p className="mb-6 text-gray-500">
-                Please fill out the crop recommendation form to get personalized
-                suggestions.
-              </p>
-              <a
-                href="/crop-recommendation"
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium transition-colors"
-              >
-                Go to Crop Recommendation
-              </a>
-
             </div>
           </div>
         </div>
@@ -349,5 +302,3 @@ const RecommendedCrops = () => {
 };
 
 export default RecommendedCrops;
-
-//--> Error ki solve hoice...
