@@ -273,11 +273,135 @@ const PDFDownload = ({
       doc.line(margin, y, pageWidth - margin, y);
       y += 8;
 
-      // Soil Analysis Overview (two-column cards)
-      sectionTitle("Soil Analysis Overview");
+      // Current Parameters Cards Section
+      sectionTitle("Current Soil Parameters Overview");
 
       const current = data?.current_parameters || {};
       const ideal = data?.predicted_ideal || {};
+      const parameterCards = [
+        {
+          label: "Nitrogen (N)",
+          value: formatValue(current.N),
+          target: formatValue(ideal.N) || "50",
+          color: [59, 130, 246],
+        }, // blue
+        {
+          label: "Phosphorus (P)",
+          value: formatValue(current.P),
+          target: formatValue(ideal.P) || "50",
+          color: [147, 51, 234],
+        }, // purple
+        {
+          label: "Potassium (K)",
+          value: formatValue(current.K),
+          target: formatValue(ideal.K) || "50",
+          color: [34, 197, 94],
+        }, // green
+        {
+          label: "Temperature",
+          value: `${formatValue(current.temperature)}°C`,
+          target: `${formatValue(ideal.temperature) || "25"}°C`,
+          color: [249, 115, 22],
+        }, // orange
+        {
+          label: "Humidity",
+          value: `${formatValue(current.humidity)}%`,
+          target: `${formatValue(ideal.humidity) || "70"}%`,
+          color: [6, 182, 212],
+        }, // cyan
+        {
+          label: "pH Level",
+          value: formatValue(current.ph),
+          target: formatValue(ideal.ph) || "7.0",
+          color: [99, 102, 241],
+        }, // indigo
+      ];
+
+      // Draw parameter cards in a 3x2 grid
+      const cardWidth = (contentWidth - gutter * 2) / 3;
+      const cardHeight = 25;
+      const cardSpacing = 4;
+
+      parameterCards.forEach((param, index) => {
+        const row = Math.floor(index / 3);
+        const col = index % 3;
+        const cardX = margin + col * (cardWidth + gutter);
+        const cardY = y + row * (cardHeight + cardSpacing);
+
+        ensureSpace(cardHeight + cardSpacing);
+
+        // Card background
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(cardX, cardY, cardWidth, cardHeight, 2, 2, "F");
+
+        // Border and accent
+        doc.setDrawColor(229, 231, 235);
+        doc.roundedRect(cardX, cardY, cardWidth, cardHeight, 2, 2, "S");
+
+        // Left accent bar
+        doc.setFillColor(...param.color);
+        doc.rect(cardX, cardY, 2, cardHeight, "F");
+
+        // Parameter name
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(55, 65, 81);
+        doc.text(param.label, cardX + 4, cardY + 8);
+
+        // Target value (top right)
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(...param.color);
+        doc.text(`Target: ${param.target}`, cardX + cardWidth - 4, cardY + 6, {
+          align: "right",
+        });
+
+        // Parameter value
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.setTextColor(17, 24, 39);
+        doc.text(param.value, cardX + 4, cardY + 18);
+
+        // Progress indicator (simple visual)
+        const progressWidth = cardWidth - 8;
+        const progressHeight = 2;
+        const progressY = cardY + cardHeight - 4;
+
+        // Background bar
+        doc.setFillColor(229, 231, 235);
+        doc.rect(cardX + 4, progressY, progressWidth, progressHeight, "F");
+
+        // Progress bar (simplified - showing relative values)
+        let progressPercent = 0.7; // Default 70%
+        if (
+          param.label.includes("Nitrogen") ||
+          param.label.includes("Phosphorus") ||
+          param.label.includes("Potassium")
+        ) {
+          progressPercent = Math.min(parseFloat(param.value) / 50, 1);
+        } else if (param.label.includes("Humidity")) {
+          progressPercent = Math.min(parseFloat(param.value) / 100, 1);
+        } else if (param.label.includes("pH")) {
+          progressPercent = Math.min(parseFloat(param.value) / 10, 1);
+        } else if (param.label.includes("Temperature")) {
+          progressPercent = Math.min(parseFloat(param.value) / 35, 1);
+        }
+
+        doc.setFillColor(...param.color);
+        doc.rect(
+          cardX + 4,
+          progressY,
+          progressWidth * progressPercent,
+          progressHeight,
+          "F"
+        );
+      });
+
+      y +=
+        Math.ceil(parameterCards.length / 3) * (cardHeight + cardSpacing) + 8;
+
+      // Soil Analysis Overview (two-column cards)
+      sectionTitle("Detailed Soil Analysis");
 
       const leftColX = margin;
       const rightColX = margin + (contentWidth - gutter) / 2 + gutter;
@@ -355,8 +479,12 @@ const PDFDownload = ({
       );
       y += tableHeight + 10;
 
-      // Fertilizer Action Plan
+      // Fertilizer Action Plan - Start on new page
       if (Array.isArray(data?.recommendations) && data.recommendations.length) {
+        // Force new page for Fertilizer Action Plan
+        doc.addPage();
+        y = margin;
+
         sectionTitle("Fertilizer Action Plan");
 
         const list = data.recommendations;
@@ -439,6 +567,9 @@ const PDFDownload = ({
           y += boxH + 4;
         });
       }
+
+      // Add extra spacing before Quick Summary
+      y += 12;
 
       // Quick Summary
       sectionTitle("Quick Summary");
@@ -624,7 +755,7 @@ const GuidanceDetails = () => {
     >
       {/* Header Section with Crop Image */}
       {recommendations && recommendations.crop && (
-        <div className="bg-white shadow-lg border-b border-gray-200">
+        <div className="">
           <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="flex flex-col lg:flex-row items-center gap-8">
               {/* Crop Image */}
@@ -666,6 +797,193 @@ const GuidanceDetails = () => {
                     type="fertilizer"
                     targetRef={pageRef}
                   />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Current Parameters Cards Section */}
+      {/* Current Parameters Cards Section */}
+      {recommendations && recommendations.current_parameters && (
+        <div className="py-6">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Current Soil Parameters
+              </h2>
+              <p className="text-gray-600">
+                Real-time analysis of your soil conditions
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {/* Nitrogen Card */}
+              <div className="bg-white rounded-xl shadow-lg border-l-4 border-blue-500 p-4 hover:shadow-xl transition-shadow duration-300">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 font-bold text-sm">N</span>
+                  </div>
+                  <div className="text-xs text-blue-600 font-medium">
+                    Target: 50
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {recommendations.current_parameters.N}
+                </div>
+                <div className="text-xs text-gray-500 mb-2">Nitrogen</div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(
+                        (recommendations.current_parameters.N / 50) * 100,
+                        100
+                      )}%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Phosphorus Card */}
+              <div className="bg-white rounded-xl shadow-lg border-l-4 border-purple-500 p-4 hover:shadow-xl transition-shadow duration-300">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                    <span className="text-purple-600 font-bold text-sm">P</span>
+                  </div>
+                  <div className="text-xs text-purple-600 font-medium">
+                    Target: 50
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {recommendations.current_parameters.P}
+                </div>
+                <div className="text-xs text-gray-500 mb-2">Phosphorus</div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-purple-500 h-2 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(
+                        (recommendations.current_parameters.P / 50) * 100,
+                        100
+                      )}%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Potassium Card */}
+              <div className="bg-white rounded-xl shadow-lg border-l-4 border-green-500 p-4 hover:shadow-xl transition-shadow duration-300">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-green-600 font-bold text-sm">K</span>
+                  </div>
+                  <div className="text-xs text-green-600 font-medium">
+                    Target: 50
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {recommendations.current_parameters.K}
+                </div>
+                <div className="text-xs text-gray-500 mb-2">Potassium</div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(
+                        (recommendations.current_parameters.K / 50) * 100,
+                        100
+                      )}%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Temperature Card */}
+              <div className="bg-white rounded-xl shadow-lg border-l-4 border-orange-500 p-4 hover:shadow-xl transition-shadow duration-300">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                    <span className="text-orange-600 font-bold text-xs">
+                      🌡️
+                    </span>
+                  </div>
+                  <div className="text-xs text-orange-600 font-medium">
+                    Ideal
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {recommendations.current_parameters.temperature}°
+                </div>
+                <div className="text-xs text-gray-500 mb-2">Temperature</div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-orange-500 h-2 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(
+                        (recommendations.current_parameters.temperature / 35) *
+                          100,
+                        100
+                      )}%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Humidity Card */}
+              <div className="bg-white rounded-xl shadow-lg border-l-4 border-cyan-500 p-4 hover:shadow-xl transition-shadow duration-300">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center">
+                    <span className="text-cyan-600 font-bold text-xs">💧</span>
+                  </div>
+                  <div className="text-xs text-cyan-600 font-medium">
+                    Target: 70%
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {recommendations.current_parameters.humidity}%
+                </div>
+                <div className="text-xs text-gray-500 mb-2">Humidity</div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-cyan-500 h-2 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(
+                        (recommendations.current_parameters.humidity / 100) *
+                          100,
+                        100
+                      )}%`,
+                    }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* pH Card */}
+              <div className="bg-white rounded-xl shadow-lg border-l-4 border-indigo-500 p-4 hover:shadow-xl transition-shadow duration-300">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                    <span className="text-indigo-600 font-bold text-xs">
+                      pH
+                    </span>
+                  </div>
+                  <div className="text-xs text-indigo-600 font-medium">
+                    Target: 7.0
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {recommendations.current_parameters.ph}
+                </div>
+                <div className="text-xs text-gray-500 mb-2">pH Level</div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-indigo-500 h-2 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(
+                        (recommendations.current_parameters.ph / 10) * 100,
+                        100
+                      )}%`,
+                    }}
+                  ></div>
                 </div>
               </div>
             </div>
@@ -842,7 +1160,7 @@ const GuidanceDetails = () => {
                 {/* First item as left-side subtitle card */}
                 {recommendations.recommendations[0] && (
                   <div className="max-w-4xl mx-auto mb-4">
-                    <div className="lg:w-1/2">
+                    <div className="w-full">
                       <div className="p-4 rounded-xl border border-blue-200 bg-blue-50">
                         <div className="text-sm font-semibold text-blue-800 mb-1">
                           Key Step
@@ -856,15 +1174,15 @@ const GuidanceDetails = () => {
                 )}
 
                 <div className="grid gap-4 max-w-4xl mx-auto">
-                  {recommendations.recommendations.slice(1).map(
-                    (recommendation, index) => (
+                  {recommendations.recommendations
+                    .slice(1)
+                    .map((recommendation, index) => (
                       <RecommendationItem
                         key={index + 1}
                         text={recommendation}
-                        index={index + 1} // start numbering from 2
+                        index={index} // start numbering from 1
                       />
-                    )
-                  )}
+                    ))}
                 </div>
 
                 {/* Action Summary */}
@@ -922,7 +1240,7 @@ const GuidanceDetails = () => {
         )}
 
         {/* Footer Section */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 text-center">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 text-center  mt-6">
           <div className="max-w-3xl mx-auto">
             <div className="mb-6">
               <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
@@ -933,7 +1251,7 @@ const GuidanceDetails = () => {
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left ">
               <div className="space-y-3">
                 <h4 className="font-semibold text-gray-800 flex items-center">
                   <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
