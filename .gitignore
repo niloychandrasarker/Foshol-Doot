@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Temporary files and backups
+*_clean.*
+*_backup.*
+*_temp.*
