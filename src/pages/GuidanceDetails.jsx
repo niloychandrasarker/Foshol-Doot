@@ -21,6 +21,7 @@ import cotton from "../../public/CropsImage/cotton.jpg";
 import jute from "../../public/CropsImage/jute.jpg";
 import coffee from "../../public/CropsImage/coffee.jpg";
 
+
 import {
   HiOutlineDownload,
   HiBeaker,
@@ -30,6 +31,11 @@ import {
 import { useLocation } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import PDFDownload from "../components/PDFDownload";
+
+import { HiOutlineDownload } from "react-icons/hi";
+import { useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+
 
 const cropImg = {
   rice: rice,
@@ -159,6 +165,7 @@ const GuidanceDetails = () => {
   }, [formData]);
 
   return (
+
     <div className="bg-green-50 min-h-screen">
       {/* Header Section with Crop Image */}
       {recommendations && recommendations.crop && (
@@ -312,11 +319,134 @@ const GuidanceDetails = () => {
                 />
               </DataCard>
             )}
+
+    <div className="bg-green-50 min-h-screen p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-6">
+          {recommendations && recommendations.crop
+            ? `${
+                recommendations.crop.charAt(0).toUpperCase() +
+                recommendations.crop.slice(1)
+              } Fertilizer Guidance`
+            : loading
+            ? "Loading Guidance..."
+            : "Fertilizer Guidance"}
+        </h1>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center text-lg text-green-700 py-12">
+            <div className="mb-4">
+              <span className="loading loading-dots loading-xl"></span>
+            </div>
+            <p className="text-sm text-gray-600">
+              Getting fertilizer recommendations...
+            </p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-4 mb-6">
+            <div className="text-red-800 text-center">
+              <p className="text-lg font-medium mb-2">⚠️ Error</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Current Parameters Section */}
+        {recommendations && recommendations.current_parameters && (
+          <div className="mb-6 md:mb-8">
+            <div className="inline-block border-2 border-blue-500 rounded-xl px-4 py-2 mb-4">
+              <h2 className="text-xl font-bold text-gray-800">
+                Current Soil Parameters
+              </h2>
+            </div>
+            <InfoCard
+              title="Your Soil Conditions"
+              description="Current nutrient levels and environmental conditions"
+              imageUrl={getCropImage(recommendations.crop)}
+              imageAlt={`${recommendations.crop} soil conditions`}
+            >
+              <div className="grid grid-cols-2 gap-2">
+                <p>
+                  <strong>Nitrogen (N):</strong>{" "}
+                  {recommendations.current_parameters.N}
+                </p>
+                <p>
+                  <strong>Phosphorus (P):</strong>{" "}
+                  {recommendations.current_parameters.P}
+                </p>
+                <p>
+                  <strong>Potassium (K):</strong>{" "}
+                  {recommendations.current_parameters.K}
+                </p>
+                <p>
+                  <strong>Temperature:</strong>{" "}
+                  {recommendations.current_parameters.temperature}°C
+                </p>
+                <p>
+                  <strong>Humidity:</strong>{" "}
+                  {recommendations.current_parameters.humidity}%
+                </p>
+                <p>
+                  <strong>pH Level:</strong>{" "}
+                  {recommendations.current_parameters.ph}
+                </p>
+              </div>
+            </InfoCard>
+          </div>
+        )}
+
+        {/* Predicted Ideal Parameters Section */}
+        {recommendations && recommendations.predicted_ideal && (
+          <div className="mb-6 md:mb-8">
+            <div className="inline-block border-2 border-green-500 rounded-xl px-4 py-2 mb-4">
+              <h2 className="text-xl font-bold text-gray-800">
+                Ideal Parameters
+              </h2>
+            </div>
+            <InfoCard
+              title="Recommended Ideal Levels"
+              description="Optimal nutrient levels for your crop"
+              imageUrl={getCropImage(recommendations.crop)}
+              imageAlt="Ideal parameters"
+            >
+              <div className="grid grid-cols-2 gap-2">
+                <p>
+                  <strong>Nitrogen (N):</strong>{" "}
+                  {recommendations.predicted_ideal.N}
+                </p>
+                <p>
+                  <strong>Phosphorus (P):</strong>{" "}
+                  {recommendations.predicted_ideal.P}
+                </p>
+                <p>
+                  <strong>Potassium (K):</strong>{" "}
+                  {recommendations.predicted_ideal.K}
+                </p>
+                <p>
+                  <strong>Temperature:</strong>{" "}
+                  {recommendations.predicted_ideal.temperature}°C
+                </p>
+                <p>
+                  <strong>Humidity:</strong>{" "}
+                  {recommendations.predicted_ideal.humidity}%
+                </p>
+                <p>
+                  <strong>pH Level:</strong>{" "}
+                  {recommendations.predicted_ideal.ph}
+                </p>
+              </div>
+            </InfoCard>
+
           </div>
         )}
 
         {/* Recommendations Section */}
         {recommendations && recommendations.recommendations && (
+
           <DataCard
             title="Fertilizer Action Plan"
             icon={<HiLightBulb className="w-6 h-6 text-orange-600" />}
@@ -332,10 +462,30 @@ const GuidanceDetails = () => {
               ))}
             </div>
           </DataCard>
+
+          <div className="mb-6 md:mb-8">
+            <div className="inline-block border-2 border-orange-500 rounded-xl px-4 py-2 mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Action Plan</h2>
+            </div>
+            <InfoCard
+              title="Fertilizer Recommendations"
+              description="Step-by-step guidance for optimal crop growth"
+              imageUrl={getCropImage(recommendations.crop)}
+              imageAlt="Fertilizer recommendations"
+            >
+              {recommendations.recommendations.map((recommendation, index) => (
+                <p key={index} className="mb-2 p-2 bg-green-100 rounded-lg">
+                  {recommendation}
+                </p>
+              ))}
+            </InfoCard>
+          </div>
+
         )}
 
         {/* No Data State */}
         {!loading && !error && !recommendations && (
+
           <div className="text-center py-16">
             <div className="text-gray-400 text-6xl mb-6">📊</div>
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
@@ -350,6 +500,19 @@ const GuidanceDetails = () => {
               className="inline-flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold transition-colors"
             >
               <span>Get Started</span>
+
+          <div className="text-center text-lg text-gray-600 py-12">
+            <p className="text-xl font-medium mb-4">No Data Available</p>
+            <p className="mb-6 text-gray-500">
+              Please fill out the fertilizer guidance form to get personalized
+              recommendations.
+            </p>
+            <a
+              href="/fertilizer-guidance"
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium transition-colors"
+            >
+              Go to Fertilizer Guidance
+
             </a>
           </div>
         )}
