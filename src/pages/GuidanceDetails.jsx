@@ -29,7 +29,7 @@ import {
 } from "react-icons/hi";
 import { useLocation } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import html2canvas from "html2canvas";
+// html2canvas is no longer used for PDF export
 import jsPDF from "jspdf";
 
 const cropImg = {
@@ -58,8 +58,9 @@ const cropImg = {
 };
 
 const getCropImage = (cropName) => {
-  // Use public URL paths instead of imports for better CORS handling
-  return `/CropsImage/${cropName?.toLowerCase()}.jpg`;
+  // Use imported images for better reliability in PDF generation
+  const crop = cropName?.toLowerCase();
+  return cropImg[crop] || `/CropsImage/${crop}.jpg`;
 };
 
 // Professional Data Card Component
@@ -80,12 +81,12 @@ const DataCard = ({ title, icon, children, className = "" }) => {
 // Parameter Item Component
 const ParameterItem = ({ label, value, unit = "" }) => {
   return (
-    <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
+    <div className="flex justify-between items-center py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 hover:shadow-sm transition-shadow">
       <span className="font-medium text-gray-700">{label}:</span>
-      <span className="font-semibold text-gray-900">
-        {value}
-        {unit}
-      </span>
+      <div className="flex items-center">
+        <span className="font-bold text-gray-900 text-lg">{value}</span>
+        {unit && <span className="text-gray-500 text-sm ml-1">{unit}</span>}
+      </div>
     </div>
   );
 };
@@ -93,11 +94,13 @@ const ParameterItem = ({ label, value, unit = "" }) => {
 // Recommendation Item Component
 const RecommendationItem = ({ text, index }) => {
   return (
-    <div className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
-      <div className="flex-shrink-0 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+    <div className="flex items-start space-x-4 p-4 bg-white rounded-xl border border-green-200 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg">
         {index + 1}
       </div>
-      <p className="text-gray-800 leading-relaxed">{text}</p>
+      <div className="flex-1">
+        <p className="text-gray-800 leading-relaxed">{text}</p>
+      </div>
     </div>
   );
 };
@@ -126,7 +129,7 @@ const InfoCard = ({ title, description, children, imageUrl, imageAlt }) => {
   );
 };
 
-// PDF Download Component with improved error handling and fallback
+// PDF Download Component with structured jsPDF rendering (no screenshots)
 const PDFDownload = ({
   data,
   fileName,
@@ -137,159 +140,356 @@ const PDFDownload = ({
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const generateSimplePDF = () => {
+  // Helper: load an image URL and return a dataURL for jsPDF
+  const loadImageAsDataURL = (src) =>
+    new Promise((resolve) => {
+      if (!src) return resolve(null);
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          const url = canvas.toDataURL("image/jpeg", 0.92);
+          resolve(url);
+        } catch {
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+
+  const formatValue = (v) => {
+    if (v === null || v === undefined) return "-";
+    if (typeof v === "number") {
+      const isInt = Number.isInteger(v);
+      return isInt ? String(v) : v.toFixed(2);
+    }
+    return String(v);
+  };
+
+  const generatePageCapturePDF = async () => {
     try {
-      const pdf = new jsPDF();
+      if (!data) throw new Error("No data to export");
 
-      // Add title
-      pdf.setFontSize(20);
-      pdf.text(`${data?.crop || "Crop"} Fertilizer Report`, 20, 30);
+      // Setup document
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20; // 20mm margins as requested
+      const contentWidth = pageWidth - margin * 2;
+      const gutter = 8;
+      const line = 6; // base line height
 
-      // Add current parameters
-      pdf.setFontSize(16);
-      pdf.text("Current Soil Parameters:", 20, 50);
-      pdf.setFontSize(12);
-      if (data?.current_parameters) {
-        pdf.text(`Nitrogen (N): ${data.current_parameters.N}`, 20, 65);
-        pdf.text(`Phosphorus (P): ${data.current_parameters.P}`, 20, 75);
-        pdf.text(`Potassium (K): ${data.current_parameters.K}`, 20, 85);
-        pdf.text(
-          `Temperature: ${data.current_parameters.temperature}°C`,
-          20,
-          95
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(33, 37, 41);
+
+      let y = margin;
+
+      // Utility: ensure there is room, otherwise add page
+      const ensureSpace = (needed) => {
+        if (y + needed > pageHeight - margin) {
+          doc.addPage();
+          y = margin;
+        }
+      };
+
+      // Utility: section title
+      const sectionTitle = (text) => {
+        ensureSpace(14);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text(text, margin, y);
+        y += 5;
+        doc.setDrawColor(229, 231, 235);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 6;
+        doc.setFont("helvetica", "normal");
+      };
+
+      // Title/Header area with optional crop image
+      const cropName = (data?.crop || "Crop").toString();
+      const headerImgW = 50;
+      const headerImgH = 35;
+      const leftColWidth = contentWidth - headerImgW - gutter;
+      const imageUrl = await loadImageAsDataURL(getCropImage(data?.crop));
+
+      // Title badge
+      doc.setFontSize(11);
+      doc.setTextColor(22, 101, 52); // green-800
+      doc.text("Professional Analysis Report", margin, y);
+      y += 8;
+
+      // Main title
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(24);
+      doc.setTextColor(17, 24, 39); // gray-900
+      doc.text(cropName.charAt(0).toUpperCase() + cropName.slice(1), margin, y);
+      y += 9;
+
+      // Subtitle
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(14);
+      doc.setTextColor(55, 65, 81); // gray-700
+      doc.text("Fertilizer Guidance", margin, y);
+
+      // Right image
+      if (imageUrl) {
+        doc.addImage(
+          imageUrl,
+          "JPEG",
+          pageWidth - margin - headerImgW,
+          y - 20, // align visually mid of title
+          headerImgW,
+          headerImgH,
+          undefined,
+          "FAST"
         );
-        pdf.text(`Humidity: ${data.current_parameters.humidity}%`, 20, 105);
-        pdf.text(`pH Level: ${data.current_parameters.ph}`, 20, 115);
       }
 
-      // Add ideal parameters
-      pdf.setFontSize(16);
-      pdf.text("Recommended Ideal Levels:", 20, 135);
-      pdf.setFontSize(12);
-      if (data?.predicted_ideal) {
-        pdf.text(`Nitrogen (N): ${data.predicted_ideal.N}`, 20, 150);
-        pdf.text(`Phosphorus (P): ${data.predicted_ideal.P}`, 20, 160);
-        pdf.text(`Potassium (K): ${data.predicted_ideal.K}`, 20, 170);
-        pdf.text(`Temperature: ${data.predicted_ideal.temperature}°C`, 20, 180);
-        pdf.text(`Humidity: ${data.predicted_ideal.humidity}%`, 20, 190);
-        pdf.text(`pH Level: ${data.predicted_ideal.ph}`, 20, 200);
-      }
+      y += 10;
+      doc.setFontSize(11);
+      doc.setTextColor(75, 85, 99); // gray-600
+      const intro =
+        "Professional soil analysis and personalized fertilizer recommendations for optimal crop growth and maximum yield";
+      const introLines = doc.splitTextToSize(intro, leftColWidth);
+      introLines.forEach((lineText) => {
+        ensureSpace(line);
+        doc.text(lineText, margin, y);
+        y += line;
+      });
 
-      // Add recommendations
-      if (data?.recommendations && data.recommendations.length > 0) {
-        pdf.setFontSize(16);
-        pdf.text("Fertilizer Recommendations:", 20, 220);
-        pdf.setFontSize(12);
+      // Divider
+      ensureSpace(6);
+      doc.setDrawColor(229, 231, 235);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 8;
 
-        let yPosition = 235;
-        data.recommendations.forEach((recommendation, index) => {
-          if (yPosition > 270) {
-            pdf.addPage();
-            yPosition = 20;
+      // Soil Analysis Overview (two-column cards)
+      sectionTitle("Soil Analysis Overview");
+
+      const current = data?.current_parameters || {};
+      const ideal = data?.predicted_ideal || {};
+
+      const leftColX = margin;
+      const rightColX = margin + (contentWidth - gutter) / 2 + gutter;
+      const colW = (contentWidth - gutter) / 2;
+      const headerH = 10;
+      const rowH = 8;
+      const currentRows = [
+        ["Nitrogen (N)", formatValue(current.N)],
+        ["Phosphorus (P)", formatValue(current.P)],
+        ["Potassium (K)", formatValue(current.K)],
+        ["Temperature", `${formatValue(current.temperature)}°C`],
+        ["Humidity", `${formatValue(current.humidity)}%`],
+        ["pH Level", formatValue(current.ph)],
+      ];
+      const idealRows = [
+        ["Nitrogen (N)", formatValue(ideal.N)],
+        ["Phosphorus (P)", formatValue(ideal.P)],
+        ["Potassium (K)", formatValue(ideal.K)],
+        ["Temperature", `${formatValue(ideal.temperature)}°C`],
+        ["Humidity", `${formatValue(ideal.humidity)}%`],
+        ["pH Level", formatValue(ideal.ph)],
+      ];
+
+      const tableHeight = headerH + currentRows.length * rowH + 6;
+      ensureSpace(tableHeight);
+
+      const drawTableCard = (x, heading, rows, accentRGB = [59, 130, 246]) => {
+        // Outer card
+        doc.setDrawColor(229, 231, 235);
+        doc.roundedRect(x, y, colW, tableHeight, 3, 3, "S");
+        // Header background
+        doc.setFillColor(249, 250, 251); // gray-50
+        doc.rect(x, y, colW, headerH, "F");
+        // Accent bar
+        doc.setDrawColor(...accentRGB);
+        doc.setLineWidth(0.6);
+        doc.line(x, y + headerH, x + colW, y + headerH);
+        doc.setLineWidth(0.2);
+        // Title
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(31, 41, 55);
+        doc.text(heading, x + 4, y + headerH - 3);
+        // Rows
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(55, 65, 81);
+        let ry = y + headerH + 4;
+        rows.forEach(([label, value], idx) => {
+          // Alternating background
+          if (idx % 2 === 0) {
+            doc.setFillColor(250, 250, 250);
+            doc.rect(x + 3, ry - 6, colW - 6, rowH, "F");
           }
+          // Labels & values
+          doc.text(label, x + 6, ry);
+          doc.setTextColor(17, 24, 39);
+          doc.text(String(value), x + colW - 6, ry, { align: "right" });
+          doc.setTextColor(55, 65, 81);
+          ry += rowH;
+        });
+      };
 
-          const lines = pdf.splitTextToSize(
-            `${index + 1}. ${recommendation}`,
-            170
-          );
-          pdf.text(lines, 20, yPosition);
-          yPosition += lines.length * 7;
+      // Draw left and right tables
+      drawTableCard(
+        leftColX,
+        "Current Soil Parameters",
+        currentRows,
+        [59, 130, 246]
+      );
+      drawTableCard(
+        rightColX,
+        "Recommended Ideal Levels",
+        idealRows,
+        [34, 197, 94]
+      );
+      y += tableHeight + 10;
+
+      // Fertilizer Action Plan
+      if (Array.isArray(data?.recommendations) && data.recommendations.length) {
+        sectionTitle("Fertilizer Action Plan");
+
+        const list = data.recommendations;
+        doc.setFontSize(11);
+        doc.setTextColor(31, 41, 55);
+
+        list.forEach((item, idx) => {
+          const prefix = `${idx + 1}. `;
+          const boxPadding = 3.5;
+          const maxTextWidth = contentWidth - boxPadding * 2 - 8; // space for bullet
+          const lines = doc.splitTextToSize(String(item), maxTextWidth);
+          const boxH = lines.length * line + boxPadding * 2;
+
+          ensureSpace(boxH + 2);
+
+          // Box
+          doc.setDrawColor(209, 250, 229); // green-100 border tint
+          doc.setFillColor(250, 250, 250);
+          doc.roundedRect(margin, y, contentWidth, boxH, 2, 2, "S");
+
+          // Number circle
+          const cy = y + boxPadding + line - 2;
+          doc.setFillColor(34, 197, 94); // green-500
+          doc.circle(margin + 5, cy, 3, "F");
+          doc.setTextColor(255, 255, 255);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10);
+          doc.text(String(idx + 1), margin + 5, cy + 1.5, { align: "center" });
+
+          // Text
+          doc.setTextColor(31, 41, 55);
+          doc.setFont("helvetica", "normal");
+          let ty = y + boxPadding + line - 1;
+          lines.forEach((t) => {
+            doc.text(t, margin + 12, ty);
+            ty += line;
+          });
+
+          y += boxH + 4;
         });
       }
 
-      pdf.save(`${fileName}.pdf`);
+      // Quick Summary
+      sectionTitle("Quick Summary");
+      const summary = `Follow these ${
+        data?.recommendations?.length || 0
+      } recommendations in sequence for best results. Monitor soil conditions regularly and adjust applications as needed.`;
+      const summaryLines = doc.splitTextToSize(summary, contentWidth - 6);
+      const sumH = summaryLines.length * line + 6;
+      ensureSpace(sumH + 2);
+      doc.setFillColor(239, 246, 255); // blue-50
+      doc.roundedRect(margin, y, contentWidth, sumH, 2, 2, "F");
+      doc.setTextColor(30, 64, 175); // blue-800
+      let sy = y + 4.5;
+      summaryLines.forEach((t) => {
+        doc.text(t, margin + 3, sy);
+        sy += line;
+      });
+      y += sumH + 8;
+
+      // Footer: Safety & Guidelines
+      sectionTitle("Safety & Guidelines");
+      doc.setTextColor(55, 65, 81);
+      const bulletsLeft = [
+        "Follow local agricultural guidelines",
+        "Test soil conditions regularly",
+        "Apply fertilizers during appropriate seasons",
+      ];
+      const bulletsRight = [
+        "Consult agricultural experts for complex issues",
+        "Monitor crop growth stages",
+        "Adjust based on weather conditions",
+      ];
+
+      const colW2 = (contentWidth - gutter) / 2;
+      const drawBullets = (x, items) => {
+        items.forEach((b) => {
+          const lines = doc.splitTextToSize(b, colW2 - 6);
+          const h = lines.length * line + 2;
+          ensureSpace(h);
+          // bullet dot
+          doc.setFillColor(34, 197, 94);
+          doc.circle(x, y - 1.5, 1.2, "F");
+          // text
+          let ly = y;
+          lines.forEach((t) => {
+            doc.text(t, x + 4, ly);
+            ly += line;
+          });
+          y = Math.max(y, ly);
+        });
+      };
+
+      const startY = y;
+      drawBullets(margin + 1, bulletsLeft);
+      y = startY; // reset to align top of right column
+      drawBullets(margin + colW2 + gutter + 1, bulletsRight);
+
+      // Final spacer
+      y += 6;
+
+      // Metadata & save
+      doc.setProperties({
+        title: `${data?.crop || "Fertilizer"} Report`,
+        subject: "Fertilizer Guidance Report",
+        author: "Farming Assistant",
+        creator: "Farming Assistant - Professional Fertilizer Guidance",
+      });
+
+      doc.save(`${fileName || "fertilizer_report"}.pdf`);
       return true;
     } catch (error) {
-      console.error("Simple PDF generation failed:", error);
-      return false;
+      console.error("Structured PDF generation failed:", error);
+      throw error;
     }
   };
 
   const handleDownload = async () => {
-    if (!targetRef?.current) {
+    if (!data) {
       alert(
-        "Page content not found. Please wait for the page to load completely."
+        "No data available to generate PDF. Please wait for the data to load."
       );
       return;
     }
 
     setIsGenerating(true);
     try {
-      // First try: Advanced PDF with page capture
-      try {
-        // Wait for any pending renders
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        const canvas = await html2canvas(targetRef.current, {
-          scale: 1,
-          useCORS: true,
-          allowTaint: false,
-          backgroundColor: "#ffffff",
-          logging: false,
-          removeContainer: true,
-          imageTimeout: 0,
-          onclone: (clonedDoc) => {
-            // Ensure all images are loaded
-            const images = clonedDoc.querySelectorAll("img");
-            images.forEach((img) => {
-              if (img.src.startsWith("blob:") || img.src.startsWith("data:")) {
-                img.style.display = "none";
-              }
-            });
-          },
-        });
-
-        const pdf = new jsPDF("portrait", "mm", "a4");
-        const imgData = canvas.toDataURL("image/png", 0.8);
-        const pdfWidth = 210;
-        const pdfHeight = 297;
-        const imgWidth = pdfWidth - 20;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-        if (imgHeight <= pdfHeight - 20) {
-          pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
-        } else {
-          let position = 0;
-          while (position < imgHeight) {
-            if (position > 0) pdf.addPage();
-
-            const remainingHeight = Math.min(
-              pdfHeight - 20,
-              imgHeight - position
-            );
-            pdf.addImage(
-              imgData,
-              "PNG",
-              10,
-              10,
-              imgWidth,
-              remainingHeight,
-              "NONE"
-            );
-            position += remainingHeight;
-          }
-        }
-
-        pdf.save(`${fileName}.pdf`);
-        console.log("Advanced PDF generated successfully!");
-      } catch (advancedError) {
-        console.warn(
-          "Advanced PDF generation failed, trying simple method:",
-          advancedError
-        );
-
-        // Fallback: Simple text-based PDF
-        const success = generateSimplePDF();
-        if (!success) {
-          throw new Error("Both PDF generation methods failed");
-        }
-        console.log("Simple PDF generated successfully!");
+      const success = await generatePageCapturePDF();
+      if (success) {
+        // no-op
       }
     } catch (error) {
-      console.error("All PDF generation methods failed:", error);
-      alert(
-        "Sorry, PDF generation failed. Please try again or check your browser settings."
-      );
+      alert(`Sorry, PDF generation failed: ${error.message}`);
     } finally {
       setIsGenerating(false);
     }
@@ -371,30 +571,48 @@ const GuidanceDetails = () => {
   }, [formData]);
 
   return (
-    <div ref={pageRef} data-pdf-target className="bg-green-50 min-h-screen">
+    <div
+      ref={pageRef}
+      data-pdf-target
+      className="bg-green-50 min-h-screen"
+      style={{
+        fontFamily: "Arial, sans-serif",
+        lineHeight: "1.6",
+        color: "#000",
+      }}
+    >
       {/* Header Section with Crop Image */}
       {recommendations && recommendations.crop && (
-        <div className="text-gray-800">
+        <div className="bg-white shadow-lg border-b border-gray-200">
           <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="flex flex-col lg:flex-row items-center gap-8">
-              <div className="lg:w-2/3">
-                <img
-                  src={getCropImage(recommendations.crop)}
-                  alt={recommendations.crop}
-                  className="w-full h-64 lg:h-80 object-cover rounded-2xl shadow-2xl"
-                />
+              {/* Crop Image */}
+              <div className="lg:w-1/2">
+                <div className="relative">
+                  <img
+                    src={getCropImage(recommendations.crop)}
+                    alt={recommendations.crop}
+                    className="w-full h-64 lg:h-80 object-cover rounded-2xl shadow-xl"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl"></div>
+                </div>
               </div>
-              <div className="lg:w-2/3 text-center lg:text-left">
-                <h1 className="text-4xl lg:text-5xl font-bold mb-4">
+
+              {/* Content */}
+              <div className="lg:w-1/2 text-center lg:text-left">
+                <div className="inline-block px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-semibold mb-4">
+                  Professional Analysis Report
+                </div>
+                <h1 className="text-3xl lg:text-4xl font-bold mb-4 text-gray-900">
                   {recommendations.crop.charAt(0).toUpperCase() +
                     recommendations.crop.slice(1)}
-                  <span className="block text-2xl lg:text-3xl font-medium mt-2 text-green-700">
+                  <span className="block text-xl lg:text-2xl font-medium mt-2 text-green-600">
                     Fertilizer Guidance
                   </span>
                 </h1>
-                <p className="text-lg lg:text-xl text-green-600 mb-6">
+                <p className="text-lg text-gray-600 mb-6 leading-relaxed">
                   Professional soil analysis and personalized fertilizer
-                  recommendations for optimal crop growth
+                  recommendations for optimal crop growth and maximum yield
                 </p>
                 <div className="flex items-center justify-center lg:justify-start space-x-4">
                   <PDFDownload
@@ -403,24 +621,10 @@ const GuidanceDetails = () => {
                       recommendations?.crop || "fertilizer"
                     }_fertilizer_report`}
                     title="Fertilizer Report"
-                    buttonText="Save Report"
+                    buttonText="Download Report"
                     type="fertilizer"
                     targetRef={pageRef}
                   />
-                  {/* Debug button - remove in production */}
-                  <button
-                    onClick={() =>
-                      console.log(
-                        "Page ref:",
-                        pageRef.current,
-                        "Data:",
-                        recommendations
-                      )
-                    }
-                    className="px-4 py-2 bg-gray-500 text-white rounded text-sm"
-                  >
-                    Debug
-                  </button>
                 </div>
               </div>
             </div>
@@ -432,34 +636,60 @@ const GuidanceDetails = () => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Loading State */}
         {loading && (
-          <div className="text-center py-16">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 text-center">
             <div className="mb-6">
-              <span className="loading loading-dots loading-xl text-green-600"></span>
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4 animate-pulse">
+                <HiBeaker className="w-8 h-8 text-green-600" />
+              </div>
+              <div className="flex justify-center space-x-1 mb-4">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce"></div>
+                <div
+                  className="w-2 h-2 bg-green-500 rounded-full animate-bounce"
+                  style={{ animationDelay: "0.1s" }}
+                ></div>
+                <div
+                  className="w-2 h-2 bg-green-500 rounded-full animate-bounce"
+                  style={{ animationDelay: "0.2s" }}
+                ></div>
+              </div>
             </div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Analyzing Your Soil Data
             </h2>
-            <p className="text-gray-600">
-              Getting personalized fertilizer recommendations...
+            <p className="text-gray-600 max-w-md mx-auto">
+              Our AI is processing your soil parameters and generating
+              personalized fertilizer recommendations...
             </p>
           </div>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
+          <div className="bg-red-50 border border-red-200 rounded-2xl shadow-lg p-8 mb-8">
             <div className="text-center">
-              <div className="text-red-500 text-5xl mb-4">⚠️</div>
-              <h3 className="text-xl font-semibold text-red-800 mb-2">
-                Something went wrong
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+                <span className="text-3xl">⚠️</span>
+              </div>
+              <h3 className="text-xl font-bold text-red-800 mb-2">
+                Oops! Something went wrong
               </h3>
-              <p className="text-red-700">{error}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-4 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Try Again
-              </button>
+              <p className="text-red-700 mb-6 max-w-md mx-auto">{error}</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="inline-flex items-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
+                >
+                  <span className="mr-2">🔄</span>
+                  Try Again
+                </button>
+                <a
+                  href="/fertilizer-guidance"
+                  className="inline-flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-semibold"
+                >
+                  <span className="mr-2">←</span>
+                  Go Back
+                </a>
+              </div>
             </div>
           </div>
         )}
@@ -467,88 +697,108 @@ const GuidanceDetails = () => {
         {/* Data Grid Layout */}
         {recommendations && (
           <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-              {/* Current Parameters */}
-              {recommendations.current_parameters && (
-                <DataCard
-                  title="Current Soil Parameters"
-                  icon={<HiBeaker className="w-6 h-6 text-blue-600" />}
-                  className="lg:col-span-1"
-                >
-                  <ParameterItem
-                    label="Nitrogen (N)"
-                    value={recommendations.current_parameters.N}
-                  />
-                  <ParameterItem
-                    label="Phosphorus (P)"
-                    value={recommendations.current_parameters.P}
-                  />
-                  <ParameterItem
-                    label="Potassium (K)"
-                    value={recommendations.current_parameters.K}
-                  />
-                  <ParameterItem
-                    label="Temperature"
-                    value={recommendations.current_parameters.temperature}
-                    unit="°C"
-                  />
-                  <ParameterItem
-                    label="Humidity"
-                    value={recommendations.current_parameters.humidity}
-                    unit="%"
-                  />
-                  <ParameterItem
-                    label="pH Level"
-                    value={recommendations.current_parameters.ph}
-                  />
-                </DataCard>
-              )}
+            {/* Parameters Comparison Section */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Soil Analysis Overview
+                </h2>
+                <p className="text-gray-600">
+                  Compare your current soil parameters with recommended levels
+                </p>
+              </div>
 
-              {/* Ideal Parameters */}
-              {recommendations.predicted_ideal && (
-                <DataCard
-                  title="Recommended Ideal Levels"
-                  icon={<HiCheckCircle className="w-6 h-6 text-green-600" />}
-                  className="md:col-span-1"
-                >
-                  <ParameterItem
-                    label="Nitrogen (N)"
-                    value={recommendations.predicted_ideal.N}
-                  />
-                  <ParameterItem
-                    label="Phosphorus (P)"
-                    value={recommendations.predicted_ideal.P}
-                  />
-                  <ParameterItem
-                    label="Potassium (K)"
-                    value={recommendations.predicted_ideal.K}
-                  />
-                  <ParameterItem
-                    label="Temperature"
-                    value={recommendations.predicted_ideal.temperature}
-                    unit="°C"
-                  />
-                  <ParameterItem
-                    label="Humidity"
-                    value={recommendations.predicted_ideal.humidity}
-                    unit="%"
-                  />
-                  <ParameterItem
-                    label="pH Level"
-                    value={recommendations.predicted_ideal.ph}
-                  />
-                </DataCard>
-              )}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Current Parameters */}
+                {recommendations.current_parameters && (
+                  <DataCard
+                    title="Current Soil Parameters"
+                    icon={<HiBeaker className="w-6 h-6 text-blue-600" />}
+                    className="border-blue-200 hover:border-blue-300"
+                  >
+                    <ParameterItem
+                      label="Nitrogen (N)"
+                      value={recommendations.current_parameters.N}
+                    />
+                    <ParameterItem
+                      label="Phosphorus (P)"
+                      value={recommendations.current_parameters.P}
+                    />
+                    <ParameterItem
+                      label="Potassium (K)"
+                      value={recommendations.current_parameters.K}
+                    />
+                    <ParameterItem
+                      label="Temperature"
+                      value={recommendations.current_parameters.temperature}
+                      unit="°C"
+                    />
+                    <ParameterItem
+                      label="Humidity"
+                      value={recommendations.current_parameters.humidity}
+                      unit="%"
+                    />
+                    <ParameterItem
+                      label="pH Level"
+                      value={recommendations.current_parameters.ph}
+                    />
+                  </DataCard>
+                )}
+
+                {/* Ideal Parameters */}
+                {recommendations.predicted_ideal && (
+                  <DataCard
+                    title="Recommended Ideal Levels"
+                    icon={<HiCheckCircle className="w-6 h-6 text-green-600" />}
+                    className="border-green-200 hover:border-green-300"
+                  >
+                    <ParameterItem
+                      label="Nitrogen (N)"
+                      value={recommendations.predicted_ideal.N}
+                    />
+                    <ParameterItem
+                      label="Phosphorus (P)"
+                      value={recommendations.predicted_ideal.P}
+                    />
+                    <ParameterItem
+                      label="Potassium (K)"
+                      value={recommendations.predicted_ideal.K}
+                    />
+                    <ParameterItem
+                      label="Temperature"
+                      value={recommendations.predicted_ideal.temperature}
+                      unit="°C"
+                    />
+                    <ParameterItem
+                      label="Humidity"
+                      value={recommendations.predicted_ideal.humidity}
+                      unit="%"
+                    />
+                    <ParameterItem
+                      label="pH Level"
+                      value={recommendations.predicted_ideal.ph}
+                    />
+                  </DataCard>
+                )}
+              </div>
             </div>
 
             {/* Recommendations Section */}
             {recommendations.recommendations && (
-              <DataCard
-                title="Fertilizer Action Plan"
-                icon={<HiLightBulb className="w-6 h-6 text-orange-600" />}
-                className="mb-8"
-              >
-                <div className="space-y-4">
+              <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-2xl shadow-lg border border-orange-200 p-6">
+                <div className="text-center mb-8">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4">
+                    <HiLightBulb className="w-8 h-8 text-orange-600" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Fertilizer Action Plan
+                  </h2>
+                  <p className="text-gray-600">
+                    Step-by-step recommendations to optimize your soil health
+                  </p>
+                </div>
+
+                <div className="grid gap-4 max-w-4xl mx-auto">
                   {recommendations.recommendations.map(
                     (recommendation, index) => (
                       <RecommendationItem
@@ -559,42 +809,106 @@ const GuidanceDetails = () => {
                     )
                   )}
                 </div>
-              </DataCard>
+
+                {/* Action Summary */}
+                <div className="mt-8 p-4 bg-white/70 rounded-xl border border-orange-200">
+                  <div className="flex items-center mb-2">
+                    <HiCheckCircle className="w-5 h-5 text-green-600 mr-2" />
+                    <h4 className="font-semibold text-gray-800">
+                      Quick Summary
+                    </h4>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Follow these {recommendations.recommendations.length}{" "}
+                    recommendations in sequence for best results. Monitor soil
+                    conditions regularly and adjust applications as needed.
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         )}
 
         {/* No Data State */}
         {!loading && !error && !recommendations && (
-          <div className="text-center py-16">
-            <div className="text-gray-400 text-6xl mb-6">📊</div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              No Data Available
-            </h2>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Please fill out the fertilizer guidance form to get personalized
-              recommendations for your crop.
-            </p>
-            <a
-              href="/fertilizer-guidance"
-              className="inline-flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold transition-colors"
-            >
-              <span>Get Started</span>
-            </a>
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-12 text-center">
+            <div className="mb-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
+                <span className="text-4xl">📊</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                No Data Available
+              </h2>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto leading-relaxed">
+                Please fill out the fertilizer guidance form to get personalized
+                recommendations for your crop and soil conditions.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="/fertilizer-guidance"
+                className="inline-flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold transition-colors shadow-lg"
+              >
+                <span>🌱</span>
+                <span>Get Started</span>
+              </a>
+              <a
+                href="/"
+                className="inline-flex items-center space-x-2 bg-gray-600 hover:bg-gray-700 text-white px-8 py-3 rounded-xl font-semibold transition-colors"
+              >
+                <span>🏠</span>
+                <span>Go Home</span>
+              </a>
+            </div>
           </div>
         )}
 
         {/* Footer Section */}
-        <div className="text-center pt-8 border-t border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">
-            Safety & Guidelines
-          </h3>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Always follow local agricultural guidelines and consult with
-            agricultural experts for best results. Test soil conditions
-            regularly and adjust fertilizer application based on crop growth
-            stages.
-          </p>
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 text-center">
+          <div className="max-w-3xl mx-auto">
+            <div className="mb-6">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-4">
+                <span className="text-2xl">🛡️</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Safety & Guidelines
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+              <div className="space-y-3">
+                <h4 className="font-semibold text-gray-800 flex items-center">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                  Best Practices
+                </h4>
+                <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                  <li>• Follow local agricultural guidelines</li>
+                  <li>• Test soil conditions regularly</li>
+                  <li>• Apply fertilizers during appropriate seasons</li>
+                </ul>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="font-semibold text-gray-800 flex items-center">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                  Expert Consultation
+                </h4>
+                <ul className="text-sm text-gray-600 space-y-1 ml-4">
+                  <li>• Consult agricultural experts for complex issues</li>
+                  <li>• Monitor crop growth stages</li>
+                  <li>• Adjust applications based on weather conditions</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800 font-medium">
+                💡 Pro Tip: Keep a record of your fertilizer applications and
+                soil test results for future reference
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
