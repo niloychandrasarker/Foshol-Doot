@@ -363,8 +363,47 @@ const PDFDownload = ({
         doc.setFontSize(11);
         doc.setTextColor(31, 41, 55);
 
-        list.forEach((item, idx) => {
-          const prefix = `${idx + 1}. `;
+        // Left-side subtitle using the first item
+        const planColW = (contentWidth - gutter) / 2;
+        if (list.length > 0) {
+          const subPad = 3.5;
+          const subLines = doc.splitTextToSize(
+            String(list[0]),
+            planColW - subPad * 2
+          );
+          const subH = subLines.length * line + subPad * 2;
+
+          ensureSpace(subH + 2);
+          // Card on left only
+          doc.setDrawColor(219, 234, 254); // blue-100 border
+          doc.setFillColor(239, 246, 255); // blue-50
+          doc.roundedRect(margin, y, planColW, subH, 2, 2, "FD");
+
+          // Subtitle heading
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(30, 64, 175); // blue-800
+          doc.setFontSize(12);
+          doc.text("Key Step", margin + subPad, y + subPad + 3.5);
+
+          // Subtitle text
+          doc.setFont("helvetica", "italic");
+          doc.setFontSize(11);
+          doc.setTextColor(31, 41, 55);
+          let sY = y + subPad + 3.5 + 5;
+          subLines.forEach((t) => {
+            doc.text(t, margin + subPad, sY, {
+              maxWidth: planColW - subPad * 2,
+            });
+            sY += line;
+          });
+
+          // move y below the subtitle block
+          y += subH + 6;
+        }
+
+        // Remaining items as numbered boxes starting from 2
+        list.slice(1).forEach((item, idx) => {
+          const displayIdx = idx + 2;
           const boxPadding = 3.5;
           const maxTextWidth = contentWidth - boxPadding * 2 - 8; // space for bullet
           const lines = doc.splitTextToSize(String(item), maxTextWidth);
@@ -384,7 +423,9 @@ const PDFDownload = ({
           doc.setTextColor(255, 255, 255);
           doc.setFont("helvetica", "bold");
           doc.setFontSize(10);
-          doc.text(String(idx + 1), margin + 5, cy + 1.5, { align: "center" });
+          doc.text(String(displayIdx), margin + 5, cy + 1.5, {
+            align: "center",
+          });
 
           // Text
           doc.setTextColor(31, 41, 55);
@@ -798,13 +839,29 @@ const GuidanceDetails = () => {
                   </p>
                 </div>
 
+                {/* First item as left-side subtitle card */}
+                {recommendations.recommendations[0] && (
+                  <div className="max-w-4xl mx-auto mb-4">
+                    <div className="lg:w-1/2">
+                      <div className="p-4 rounded-xl border border-blue-200 bg-blue-50">
+                        <div className="text-sm font-semibold text-blue-800 mb-1">
+                          Key Step
+                        </div>
+                        <div className="text-gray-800 italic">
+                          {recommendations.recommendations[0]}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid gap-4 max-w-4xl mx-auto">
-                  {recommendations.recommendations.map(
+                  {recommendations.recommendations.slice(1).map(
                     (recommendation, index) => (
                       <RecommendationItem
-                        key={index}
+                        key={index + 1}
                         text={recommendation}
-                        index={index}
+                        index={index + 1} // start numbering from 2
                       />
                     )
                   )}
