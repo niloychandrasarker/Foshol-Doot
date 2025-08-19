@@ -28,7 +28,9 @@ import {
   HiLightBulb,
 } from "react-icons/hi";
 import { useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 const cropImg = {
   rice: rice,
@@ -123,20 +125,79 @@ const InfoCard = ({ title, description, children, imageUrl, imageAlt }) => {
   );
 };
 
-// PDF Download Component (simplified version)
-const PDFDownload = ({ data, fileName, title, buttonText, type }) => {
-  const handleDownload = () => {
-    // Simple implementation - would need actual PDF generation library
-    console.log("PDF download would be implemented here");
+// PDF Download Component with actual functionality
+const PDFDownload = ({ data, fileName, title, buttonText, type, targetRef }) => {
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleDownload = async () => {
+    if (!targetRef?.current) {
+      console.error("Target element not found for PDF generation");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      // Create canvas from the target element
+      const canvas = await html2canvas(targetRef.current, {
+        scale: 2, // Higher quality
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        height: targetRef.current.scrollHeight,
+        width: targetRef.current.scrollWidth,
+      });
+
+      // Create PDF
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const imgWidth = 190; // A4 width minus margins
+      const pageHeight = 297; // A4 height
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 10; // Top margin
+
+      // Add first page
+      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight - 20; // Subtract margins
+
+      // Add more pages if needed
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight + 10;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // Download the PDF
+      pdf.save(`${fileName}.pdf`);
+      
+      console.log("PDF generated successfully!");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Sorry, there was an error generating the PDF. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
     <button
       onClick={handleDownload}
-      className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
+      disabled={isGenerating}
+      className={`inline-flex items-center space-x-2 px-6 py-3 rounded-xl font-semibold transition-colors ${
+        isGenerating
+          ? "bg-gray-400 cursor-not-allowed text-white"
+          : "bg-blue-600 hover:bg-blue-700 text-white"
+      }`}
     >
       <HiOutlineDownload className="w-5 h-5" />
-      <span>{buttonText}</span>
+      <span>{isGenerating ? "Generating..." : buttonText}</span>
     </button>
   );
 };
@@ -147,6 +208,7 @@ const GuidanceDetails = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const formData = location.state;
+  const pageRef = useRef(null); // Add ref for PDF generation
 
   useEffect(() => {
     const fetchRecommendations = async () => {
@@ -200,7 +262,7 @@ const GuidanceDetails = () => {
   }, [formData]);
 
   return (
-    <div className="bg-green-50 min-h-screen">
+    <div ref={pageRef} className="bg-green-50 min-h-screen">
       {/* Header Section with Crop Image */}
       {recommendations && recommendations.crop && (
         <div className="text-gray-800">
@@ -234,6 +296,7 @@ const GuidanceDetails = () => {
                     title="Fertilizer Report"
                     buttonText="Save Report"
                     type="fertilizer"
+                    targetRef={pageRef}
                   />
                 </div>
               </div>
