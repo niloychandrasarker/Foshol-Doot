@@ -58,7 +58,8 @@ const cropImg = {
 };
 
 const getCropImage = (cropName) => {
-  return cropImg[cropName?.toLowerCase()];
+  // Use public URL paths instead of imports for better CORS handling
+  return `/CropsImage/${cropName?.toLowerCase()}.jpg`;
 };
 
 // Professional Data Card Component
@@ -125,62 +126,170 @@ const InfoCard = ({ title, description, children, imageUrl, imageAlt }) => {
   );
 };
 
-// PDF Download Component with actual functionality
-const PDFDownload = ({ data, fileName, title, buttonText, type, targetRef }) => {
+// PDF Download Component with improved error handling and fallback
+const PDFDownload = ({
+  data,
+  fileName,
+  title,
+  buttonText,
+  type,
+  targetRef,
+}) => {
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const generateSimplePDF = () => {
+    try {
+      const pdf = new jsPDF();
+
+      // Add title
+      pdf.setFontSize(20);
+      pdf.text(`${data?.crop || "Crop"} Fertilizer Report`, 20, 30);
+
+      // Add current parameters
+      pdf.setFontSize(16);
+      pdf.text("Current Soil Parameters:", 20, 50);
+      pdf.setFontSize(12);
+      if (data?.current_parameters) {
+        pdf.text(`Nitrogen (N): ${data.current_parameters.N}`, 20, 65);
+        pdf.text(`Phosphorus (P): ${data.current_parameters.P}`, 20, 75);
+        pdf.text(`Potassium (K): ${data.current_parameters.K}`, 20, 85);
+        pdf.text(
+          `Temperature: ${data.current_parameters.temperature}°C`,
+          20,
+          95
+        );
+        pdf.text(`Humidity: ${data.current_parameters.humidity}%`, 20, 105);
+        pdf.text(`pH Level: ${data.current_parameters.ph}`, 20, 115);
+      }
+
+      // Add ideal parameters
+      pdf.setFontSize(16);
+      pdf.text("Recommended Ideal Levels:", 20, 135);
+      pdf.setFontSize(12);
+      if (data?.predicted_ideal) {
+        pdf.text(`Nitrogen (N): ${data.predicted_ideal.N}`, 20, 150);
+        pdf.text(`Phosphorus (P): ${data.predicted_ideal.P}`, 20, 160);
+        pdf.text(`Potassium (K): ${data.predicted_ideal.K}`, 20, 170);
+        pdf.text(`Temperature: ${data.predicted_ideal.temperature}°C`, 20, 180);
+        pdf.text(`Humidity: ${data.predicted_ideal.humidity}%`, 20, 190);
+        pdf.text(`pH Level: ${data.predicted_ideal.ph}`, 20, 200);
+      }
+
+      // Add recommendations
+      if (data?.recommendations && data.recommendations.length > 0) {
+        pdf.setFontSize(16);
+        pdf.text("Fertilizer Recommendations:", 20, 220);
+        pdf.setFontSize(12);
+
+        let yPosition = 235;
+        data.recommendations.forEach((recommendation, index) => {
+          if (yPosition > 270) {
+            pdf.addPage();
+            yPosition = 20;
+          }
+
+          const lines = pdf.splitTextToSize(
+            `${index + 1}. ${recommendation}`,
+            170
+          );
+          pdf.text(lines, 20, yPosition);
+          yPosition += lines.length * 7;
+        });
+      }
+
+      pdf.save(`${fileName}.pdf`);
+      return true;
+    } catch (error) {
+      console.error("Simple PDF generation failed:", error);
+      return false;
+    }
+  };
 
   const handleDownload = async () => {
     if (!targetRef?.current) {
-      console.error("Target element not found for PDF generation");
+      alert(
+        "Page content not found. Please wait for the page to load completely."
+      );
       return;
     }
 
     setIsGenerating(true);
     try {
-      // Create canvas from the target element
-      const canvas = await html2canvas(targetRef.current, {
-        scale: 2, // Higher quality
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        height: targetRef.current.scrollHeight,
-        width: targetRef.current.scrollWidth,
-      });
+      // First try: Advanced PDF with page capture
+      try {
+        // Wait for any pending renders
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Create PDF
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
+        const canvas = await html2canvas(targetRef.current, {
+          scale: 1,
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: "#ffffff",
+          logging: false,
+          removeContainer: true,
+          imageTimeout: 0,
+          onclone: (clonedDoc) => {
+            // Ensure all images are loaded
+            const images = clonedDoc.querySelectorAll("img");
+            images.forEach((img) => {
+              if (img.src.startsWith("blob:") || img.src.startsWith("data:")) {
+                img.style.display = "none";
+              }
+            });
+          },
+        });
 
-      const imgData = canvas.toDataURL("image/png");
-      const imgWidth = 190; // A4 width minus margins
-      const pageHeight = 297; // A4 height
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 10; // Top margin
+        const pdf = new jsPDF("portrait", "mm", "a4");
+        const imgData = canvas.toDataURL("image/png", 0.8);
+        const pdfWidth = 210;
+        const pdfHeight = 297;
+        const imgWidth = pdfWidth - 20;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      // Add first page
-      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight - 20; // Subtract margins
+        if (imgHeight <= pdfHeight - 20) {
+          pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
+        } else {
+          let position = 0;
+          while (position < imgHeight) {
+            if (position > 0) pdf.addPage();
 
-      // Add more pages if needed
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight + 10;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+            const remainingHeight = Math.min(
+              pdfHeight - 20,
+              imgHeight - position
+            );
+            pdf.addImage(
+              imgData,
+              "PNG",
+              10,
+              10,
+              imgWidth,
+              remainingHeight,
+              "NONE"
+            );
+            position += remainingHeight;
+          }
+        }
+
+        pdf.save(`${fileName}.pdf`);
+        console.log("Advanced PDF generated successfully!");
+      } catch (advancedError) {
+        console.warn(
+          "Advanced PDF generation failed, trying simple method:",
+          advancedError
+        );
+
+        // Fallback: Simple text-based PDF
+        const success = generateSimplePDF();
+        if (!success) {
+          throw new Error("Both PDF generation methods failed");
+        }
+        console.log("Simple PDF generated successfully!");
       }
-
-      // Download the PDF
-      pdf.save(`${fileName}.pdf`);
-      
-      console.log("PDF generated successfully!");
     } catch (error) {
-      console.error("Error generating PDF:", error);
-      alert("Sorry, there was an error generating the PDF. Please try again.");
+      console.error("All PDF generation methods failed:", error);
+      alert(
+        "Sorry, PDF generation failed. Please try again or check your browser settings."
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -197,7 +306,7 @@ const PDFDownload = ({ data, fileName, title, buttonText, type, targetRef }) => 
       }`}
     >
       <HiOutlineDownload className="w-5 h-5" />
-      <span>{isGenerating ? "Generating..." : buttonText}</span>
+      <span>{isGenerating ? "Generating PDF..." : buttonText}</span>
     </button>
   );
 };
@@ -262,7 +371,7 @@ const GuidanceDetails = () => {
   }, [formData]);
 
   return (
-    <div ref={pageRef} className="bg-green-50 min-h-screen">
+    <div ref={pageRef} data-pdf-target className="bg-green-50 min-h-screen">
       {/* Header Section with Crop Image */}
       {recommendations && recommendations.crop && (
         <div className="text-gray-800">
@@ -298,6 +407,20 @@ const GuidanceDetails = () => {
                     type="fertilizer"
                     targetRef={pageRef}
                   />
+                  {/* Debug button - remove in production */}
+                  <button
+                    onClick={() =>
+                      console.log(
+                        "Page ref:",
+                        pageRef.current,
+                        "Data:",
+                        recommendations
+                      )
+                    }
+                    className="px-4 py-2 bg-gray-500 text-white rounded text-sm"
+                  >
+                    Debug
+                  </button>
                 </div>
               </div>
             </div>
